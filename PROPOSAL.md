@@ -48,9 +48,13 @@ In this step, we break apart each assembly instruction into its various parts: `
 At this stage, the general actions the program will have been resolved.  However, for these instructions to work together to perform a greater task, an additional step must be taken to include brainfuck snippets to update the A, M, and D registers, reset the memory pointer, and handle arbitrary jumps.  This step handles all the heavy lifting allowing the logic from previous steps to be abstracted.
 
 ## Timeline
+
 * February 15: Submission of project proposal
 * February 16: Implementation of custom brainfuck interpreter
-* February 20: 
+* February 20: Design of core brainfuck templates
+* February 23: Establishment of memory model
+* February 27: Integration of sequential fabrication
+* March 3: Conclusion of project
 
 [Nand2Tetris]: https://www.nand2tetris.org/
 [brainfuck]: https://esolangs.org/wiki/brainfuck
