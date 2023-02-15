@@ -1,9 +1,15 @@
-use {crate::traits::core::Core, std::io::Write};
+use {
+    crate::traits::{
+        core::Core,
+        seek::{Pos, Seek},
+    },
+    std::io::Write,
+};
 
 #[derive(Debug)]
 pub struct Coder<W: Write> {
     writer: W,
-    location: usize,
+    location: isize,
 }
 
 impl<W: Write> Coder<W> {
@@ -49,6 +55,17 @@ impl<W: Write> Core for Coder<W> {
     }
     fn end_loop(&mut self) -> anyhow::Result<&mut Self> {
         self.write("]")
+    }
+}
+
+impl<W: Write> Seek for Coder<W> {
+    fn seek(&mut self, pos: Pos) -> anyhow::Result<&mut Self> {
+        let delta = pos - self.location;
+        let n = delta.unsigned_abs();
+
+        match delta.cmp(&0) {
+
+        }
     }
 }
 
