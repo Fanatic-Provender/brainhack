@@ -17,3 +17,21 @@ trait CoreExt: Core {
         self.end_loop()
     }
 }
+impl<T: Core> CoreExt for T {}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::*,
+        crate::{coder::Coder, test},
+    };
+
+    #[test]
+    fn loop_() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.loop_(|c| c.dec_val())?;
+
+        test::compare_tape(coder.writer(), &[42], 0, &[0], 0);
+        Ok(())
+    }
+}
