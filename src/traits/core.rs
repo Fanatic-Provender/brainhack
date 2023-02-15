@@ -7,7 +7,7 @@ pub trait Core {
     fn end_loop(&mut self) -> anyhow::Result<&mut Self>;
 }
 
-trait CoreExt: Core {
+pub trait CoreExt: Core {
     fn loop_<F>(&mut self, f: F) -> anyhow::Result<&mut Self>
     where
         F: FnOnce(&mut Self) -> anyhow::Result<&mut Self>,
