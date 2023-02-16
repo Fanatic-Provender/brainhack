@@ -35,6 +35,12 @@ pub trait Seek: CoreExt {
         self.seek(cond)?.loop_(|s| f(s)?.seek(cond))
     }
 
+    fn clear_cell(&mut self, cells: &[Pos]) -> anyhow::Result<&mut Self> {
+        for &cell in cells {
+            self.seek(cell)?.clear_val()?;
+        }
+        Ok(self)
+    }
     fn add_move_cell(&mut self, src: Pos, dests: &[Pos]) -> anyhow::Result<&mut Self> {
         self.while_(src, |s| {
             s.dec_val()?;
@@ -43,6 +49,9 @@ pub trait Seek: CoreExt {
             }
             Ok(s)
         })
+    }
+    fn move_cell(&mut self, src: Pos, dests: &[Pos]) -> anyhow::Result<&mut Self> {
+        self.clear_cell(dests)?.add_move_cell(src, dests)
     }
 }
 
@@ -63,11 +72,29 @@ mod tests {
     }
 
     #[test]
+    fn clear_cell() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.clear_cell(&[0, 1, 3, 4])?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[0, 0, 4, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
     fn add_move_cell() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder.add_move_cell(2, &[0, 1, 3, 4])?;
 
         test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[7, 5, 0, 5, 9], 2);
+        Ok(())
+    }
+
+    #[test]
+    fn move_cell() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.move_cell(2, &[0, 1, 3, 4])?;
+
+        test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[4, 4, 0, 4, 4], 2);
         Ok(())
     }
 }
