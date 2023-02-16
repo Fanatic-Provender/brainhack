@@ -1,5 +1,5 @@
 use {
-    brainfuck::{program::Program, tape::VecTape, Interpreter},
+    brainfuck::{program::Program, tape::ModArrayTape, Interpreter},
     std::io::Cursor,
 };
 
@@ -26,7 +26,7 @@ pub fn compare_tape(
     let program = Program::parse(&program).expect("invalid brainfuck program");
 
     let mut buffer = vec![];
-    Interpreter::<VecTape>::new(program, &mut Cursor::new(initial_tape), &mut buffer)
+    Interpreter::<ModArrayTape>::new(program, &mut Cursor::new(initial_tape), &mut buffer)
         .run()
         .expect("brainfuck runtime error");
 
