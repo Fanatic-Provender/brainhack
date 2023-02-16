@@ -1,6 +1,6 @@
 use {
     crate::traits::{
-        core::Core,
+        core::{Core, CoreExt},
         seek::{Pos, Seek},
     },
     std::io::Write,
@@ -61,20 +61,16 @@ impl<W: Write> Core for Coder<W> {
 impl<W: Write> Seek for Coder<W> {
     fn seek(&mut self, pos: Pos) -> anyhow::Result<&mut Self> {
         let delta = pos - self.location;
-        let n = delta.unsigned_abs();
-
-        match delta.cmp(&0) {
-
-        }
+        self.change_ptr_by(delta)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use {super::*, crate::test};
 
     #[test]
-    fn coder() -> anyhow::Result<()> {
+    fn core() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
 
         coder
@@ -87,6 +83,23 @@ mod tests {
 
         assert_eq!(coder.writer, b"+-><[]");
 
+        Ok(())
+    }
+
+    #[test]
+    fn seek() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .seek(3)?
+            .inc_val_by(2)?
+            .dec_ptr_by(1)?
+            .inc_val_by(7)?
+            .seek(-4)?
+            .inc_val_by(1)?
+            .seek(1)?
+            .inc_val_by(8)?;
+
+        test::compare_tape(coder.writer(), &[], 4, &[1, 0, 0, 0, 0, 8, 7, 2], 5);
         Ok(())
     }
 }
