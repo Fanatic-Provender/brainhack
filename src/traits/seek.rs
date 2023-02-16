@@ -34,6 +34,16 @@ pub trait Seek: CoreExt {
     {
         self.seek(cond)?.loop_(|s| f(s)?.seek(cond))
     }
+
+    fn add_move_cell(&mut self, src: Pos, dests: &[Pos]) -> anyhow::Result<&mut Self> {
+        self.while_(src, |s| {
+            s.dec_val()?;
+            for &dest in dests {
+                s.seek(dest)?.inc_val()?;
+            }
+            Ok(s)
+        })
+    }
 }
 
 #[cfg(test)]
@@ -49,6 +59,15 @@ mod tests {
         coder.while_(0, |c| c.dec_val()?.seek(1)?.inc_val_by(3))?;
 
         test::compare_tape(coder.writer(), &[5], 0, &[0, 15], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn add_move_cell() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.add_move_cell(2, &[0, 1, 3, 4])?;
+
+        test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[7, 5, 0, 5, 9], 2);
         Ok(())
     }
 }
