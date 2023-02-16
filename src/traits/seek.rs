@@ -53,6 +53,13 @@ pub trait Seek: CoreExt {
     fn move_cell(&mut self, src: Pos, dests: &[Pos]) -> anyhow::Result<&mut Self> {
         self.clear_cell(dests)?.add_move_cell(src, dests)
     }
+    fn add_copy_cell(&mut self, src: Pos, dests: &[Pos], temp: Pos) -> anyhow::Result<&mut Self> {
+        let mut dests_temp = dests.to_vec();
+        dests_temp.push(temp);
+
+        self.add_move_cell(src, &dests_temp)?
+            .add_move_cell(temp, &[src])
+    }
 }
 
 #[cfg(test)]
@@ -95,6 +102,15 @@ mod tests {
         coder.move_cell(2, &[0, 1, 3, 4])?;
 
         test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[4, 4, 0, 4, 4], 2);
+        Ok(())
+    }
+
+    #[test]
+    fn add_copy_cell() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.add_copy_cell(2, &[0, 1, 3, 4], 5)?;
+
+        test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[7, 5, 4, 5, 9], 5);
         Ok(())
     }
 }
