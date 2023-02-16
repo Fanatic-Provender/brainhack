@@ -1,3 +1,5 @@
+use crate::traits::core::CoreExt;
+
 pub type Pos = isize;
 
 pub mod pos {
@@ -23,6 +25,30 @@ pub mod pos {
     pub const T8: Pos = 17;
 }
 
-pub trait Seek {
+pub trait Seek: CoreExt {
     fn seek(&mut self, pos: Pos) -> anyhow::Result<&mut Self>;
+
+    fn while_<F>(&mut self, cond: Pos, f: F) -> anyhow::Result<&mut Self>
+    where
+        F: FnOnce(&mut Self) -> anyhow::Result<&mut Self>,
+    {
+        self.seek(cond)?.loop_(|s| f(s)?.seek(cond))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::*,
+        crate::{coder::Coder, test, traits::core::Core},
+    };
+
+    #[test]
+    fn while_() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.while_(0, |c| c.dec_val()?.seek(1)?.inc_val_by(3))?;
+
+        test::compare_tape(coder.writer(), &[5], 0, &[0, 15], 0);
+        Ok(())
+    }
 }
