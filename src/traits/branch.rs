@@ -14,7 +14,7 @@ pub trait Branch: Seek {
     {
         self.seek(temp)?
             .inc_val()?
-            .if_move(cond, |s| f(s)?.seek(temp)?.dec_val())?
+            .if_move(cond, |s| f(s.seek(temp)?.dec_val()?))?
             .if_move(temp, g)
     }
 }

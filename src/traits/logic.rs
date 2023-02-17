@@ -27,6 +27,17 @@ pub trait Logic: Branch {
             .copy_cell(b, &[temp_2], dest)?
             .logical_or_move(temp_1, temp_2, dest)
     }
+
+    fn logical_and_move(&mut self, a: Pos, b: Pos, dest: Pos) -> anyhow::Result<&mut Self> {
+        self.if_move(a, |s| s.move_cell(b, &[dest]))?
+            .seek(b)?
+            .clear_val()
+    }
+    fn logical_and(&mut self, a: Pos, b: Pos, dest: Pos, temp: Pos) -> anyhow::Result<&mut Self> {
+        // relies on if_move zeroing temp before calling f
+        self.copy_cell(a, &[temp], dest)?
+            .if_move(temp, |s| s.copy_cell(b, &[dest], temp))
+    }
 }
 impl<T: Branch> Logic for T {}
 
@@ -79,6 +90,30 @@ mod tests {
         test::compare_tape(coder.writer(), &[3, 0], 0, &[3, 0, 1, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 1, 0, 0], 0);
         test::compare_tape(coder.writer(), &[4, 6], 0, &[4, 6, 2, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn logical_and_move() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.logical_and_move(0, 1, 2)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[3, 0], 0, &[0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[4, 6], 0, &[0, 0, 6], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn logical_and() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.logical_and(0, 1, 2, 3)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[3, 0], 0, &[3, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[4, 6], 0, &[4, 6, 6, 0], 0);
         Ok(())
     }
 }
