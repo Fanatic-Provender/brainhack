@@ -37,6 +37,13 @@ pub trait Arith: Branch {
         self.clear_cell(&dest_cells)?
             .add_copy_word(src, dests, temp)
     }
+
+    fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
+        self.seek(word.1)?
+            .inc_val()?
+            .copy_cell(word.1, &[temp_1], temp_2)?
+            .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.inc_val())
+    }
 }
 impl<T: Branch> Arith for T {}
 
@@ -116,6 +123,18 @@ mod tests {
             &[3, 5, 0, 3, 5, 9, 3, 5, 5, 3, 5],
             0,
         );
+        Ok(())
+    }
+
+    #[test]
+    fn inc_word() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.inc_word((0, 1), 2, 3)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 42, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 42, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[31, 255], 0, &[32, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[255, 255], 0, &[0, 0, 0, 0], 0);
         Ok(())
     }
 }
