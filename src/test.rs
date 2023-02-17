@@ -3,6 +3,7 @@ use {
     std::io::Cursor,
 };
 
+#[track_caller]
 pub fn compare_tape(
     code: &[u8],
     initial_tape: &[u8],
