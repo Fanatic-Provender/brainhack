@@ -24,6 +24,19 @@ pub trait Arith: Branch {
 
         self.clear_cell(&dest_cells)?.add_move_word(src, dests)
     }
+    fn add_copy_word(&mut self, src: Word, dests: &[Word], temp: Pos) -> anyhow::Result<&mut Self> {
+        let upper_dests: Vec<_> = dests.iter().map(|w| w.0).collect();
+        let lower_dests: Vec<_> = dests.iter().map(|w| w.1).collect();
+
+        self.add_copy_cell(src.0, &upper_dests, temp)?
+            .add_copy_cell(src.1, &lower_dests, temp)
+    }
+    fn copy_word(&mut self, src: Word, dests: &[Word], temp: Pos) -> anyhow::Result<&mut Self> {
+        let dest_cells: Vec<_> = dests.iter().map(|w| [w.0, w.1]).flatten().collect();
+
+        self.clear_cell(&dest_cells)?
+            .add_copy_word(src, dests, temp)
+    }
 }
 impl<T: Branch> Arith for T {}
 
@@ -31,11 +44,15 @@ impl<T: Branch> Arith for T {}
 mod tests {
     use {
         super::*,
-        crate::{coder::Coder, test, traits::seek::Seek},
+        crate::{
+            coder::Coder,
+            test,
+            traits::seek::{pos, Seek},
+        },
     };
 
     #[test]
-    fn add_move_cell() -> anyhow::Result<()> {
+    fn add_move_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
             .add_move_word(word::R, &[word::A, word::D, word::M])?
@@ -52,7 +69,7 @@ mod tests {
     }
 
     #[test]
-    fn move_cell() -> anyhow::Result<()> {
+    fn move_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
             .move_word(word::R, &[word::A, word::D, word::M])?
@@ -63,6 +80,40 @@ mod tests {
             &[3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5],
             0,
             &[3, 5, 4, 3, 5, 9, 3, 5, 5, 0, 0],
+            0,
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn add_copy_word() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .add_copy_word(word::R, &[word::A, word::D, word::M], pos::T0)?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[3, 1, 0, 1, 5, 9, 2, 6, 5, 3, 5],
+            0,
+            &[6, 6, 0, 4, 10, 9, 5, 11, 5, 3, 5],
+            0,
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn copy_word() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .copy_word(word::R, &[word::A, word::D, word::M], pos::T0)?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[3, 1, 0, 1, 5, 9, 2, 6, 5, 3, 5],
+            0,
+            &[3, 5, 0, 3, 5, 9, 3, 5, 5, 3, 5],
             0,
         );
         Ok(())
