@@ -1,4 +1,4 @@
-use crate::traits::{branch::Branch, seek::Pos};
+use crate::traits::{logic::Logic, seek::Pos};
 
 pub type Word = (Pos, Pos);
 
@@ -11,7 +11,7 @@ pub mod word {
     pub const R: Word = (9, 10);
 }
 
-pub trait Arith: Branch {
+pub trait Arith: Logic {
     fn add_move_word(&mut self, src: Word, dests: &[Word]) -> anyhow::Result<&mut Self> {
         let upper_dests: Vec<_> = dests.iter().map(|w| w.0).collect();
         let lower_dests: Vec<_> = dests.iter().map(|w| w.1).collect();
@@ -38,6 +38,19 @@ pub trait Arith: Branch {
             .add_copy_word(src, dests, temp)
     }
 
+    fn is_nonzero_move(&mut self, word: Word, dest: Pos) -> anyhow::Result<&mut Self> {
+        self.logical_or_move(word.0, word.1, dest)
+    }
+    fn is_nonzero(
+        &mut self,
+        word: Word,
+        dest: Pos,
+        temp_1: Pos,
+        temp_2: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.logical_or(word.0, word.1, dest, temp_1, temp_2)
+    }
+
     fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
         self.seek(word.1)?
             .inc_val()?
@@ -51,7 +64,7 @@ pub trait Arith: Branch {
             .dec_val()
     }
 }
-impl<T: Branch> Arith for T {}
+impl<T: Logic> Arith for T {}
 
 #[cfg(test)]
 mod tests {
@@ -129,6 +142,30 @@ mod tests {
             &[3, 5, 0, 3, 5, 9, 3, 5, 5, 3, 5],
             0,
         );
+        Ok(())
+    }
+
+    #[test]
+    fn is_nonzero_move() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_nonzero_move((0, 1), 2)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 0, 1], 0);
+        test::compare_tape(coder.writer(), &[255, 0], 0, &[0, 0, 1], 0);
+        test::compare_tape(coder.writer(), &[31, 41], 0, &[0, 0, 2], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn is_nonzero() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_nonzero((0, 1), 2, 3, 4)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 41, 1, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[255, 0], 0, &[255, 0, 1, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 41, 2, 0, 0], 0);
         Ok(())
     }
 
