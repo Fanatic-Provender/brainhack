@@ -50,6 +50,20 @@ pub trait Arith: Logic {
     ) -> anyhow::Result<&mut Self> {
         self.logical_or(word.0, word.1, dest, temp_1, temp_2)
     }
+    fn is_zero_move(&mut self, word: Word, dest: Pos, temp: Pos) -> anyhow::Result<&mut Self> {
+        self.is_nonzero_move(word, temp)?
+            .logical_not_move(temp, dest)
+    }
+    fn is_zero(
+        &mut self,
+        word: Word,
+        dest: Pos,
+        temp_1: Pos,
+        temp_2: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.is_nonzero(word, temp_1, dest, temp_2)?
+            .logical_not_move(temp_1, dest)
+    }
 
     fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
         self.seek(word.1)?
@@ -166,6 +180,30 @@ mod tests {
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 41, 1, 0, 0], 0);
         test::compare_tape(coder.writer(), &[255, 0], 0, &[255, 0, 1, 0, 0], 0);
         test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 41, 2, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn is_zero_move() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_zero_move((0, 1), 2, 3)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[255, 0], 0, &[0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[31, 41], 0, &[0, 0, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn is_zero() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_zero((0, 1), 2, 3, 4)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 41, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[255, 0], 0, &[255, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 41, 0, 0, 0], 0);
         Ok(())
     }
 
