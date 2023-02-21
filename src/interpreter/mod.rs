@@ -2,17 +2,6 @@ mod brainfuck;
 mod instruction;
 mod tape;
 
-use anyhow;
-use sdl2;
-
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
-use sdl2::rect::Point;
-use std::collections::VecDeque;
-use std::time::Duration;
-
-
 fn cell_to_bin(mut cell: u8) -> [bool; 8] {
     let mut bits = [false; 8];
 
@@ -27,17 +16,19 @@ fn cell_to_bin(mut cell: u8) -> [bool; 8] {
 }
 
 fn bin_to_word(bin1: [bool; 8], bin2: [bool; 8]) -> (u8, u8) {
-    (
-    bin1.into_iter()
+    let word1 = bin1.into_iter()
+        .rev()
         .enumerate()
         .filter(|(i, bit)| *bit)
-        .fold(0, |acc, (i, bit)| 2u8.pow(i as u32)),
+        .fold(0, |acc, (i, bit)| acc + 2u8.pow(i as u32));
 
-    bin1.into_iter()
+    let word2 = bin2.into_iter()
+        .rev()
         .enumerate()
         .filter(|(i, bit)| *bit)
-        .fold(0, |acc, (i, bit)| 2u8.pow(i as u32))
-    )
+        .fold(0, |acc, (i, bit)| acc + 2u8.pow(i as u32));
+   
+   (word1, word2)
 }
 
 #[cfg(test)]
