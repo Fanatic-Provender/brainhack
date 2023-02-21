@@ -25,30 +25,60 @@ struct Brainfuck {
 impl Brainfuck {
     fn from_string(instructions: String) -> Self {
         let mut parsed_instructions: Vec<Instruction> = vec![];
+
+        let mut loop_stack = VecDeque::new();
+        let mut loop_map = HashMap::new();
         
         let mut prev_inst = b' ';
         let mut count = 1;
 
         // Parse instructions
-        for inst in instructions.bytes() {
-            if inst == b'>' || inst == b'<' || inst == b'+' || inst == b'-' {
-                if inst == prev_inst {
-                    count += 1;
-                } else {
-                    if count > 1 {
-                        parsed_instructions.push(Instruction::from_byte(prev_inst).unwrap().update_batch(count));
-                        count = 1;
-                    }
-                    parsed_instructions.push(Instruction::from_byte(inst).unwrap());
-                    prev_inst = inst;
-                }
-            }
+        // WIP: Instruction grouping
+        // for inst in instructions.bytes() {
+        //     if inst == b'>' || inst == b'<' || inst == b'+' || inst == b'-' {
+        //         if inst == prev_inst {
+        //             count += 1;
+        //         } else {
+        //             if count > 1 {
+        //                 parsed_instructions.push(Instruction::from_byte(prev_inst).unwrap().update_batch(count));
+        //                 count = 1;
+        //             }
+        //             parsed_instructions.push(Instruction::from_byte(inst).unwrap());
+        //             prev_inst = inst;
+        //         }
+        //     }
+        // }
 
+        // Non-batching parsing
+        for (i, inst) in instructions.bytes().enumerate() {
+            match inst {
+                b'>' => parsed_instructions.push(Instruction::IncPtr(1)),
+                b'<' => parsed_instructions.push(Instruction::DecPtr(1)),
+                b'+' => parsed_instructions.push(Instruction::IncCell(1)),
+                b'-' => parsed_instructions.push(Instruction::DecCell(1)),
+                b'.' => parsed_instructions.push(Instruction::Read),
+                b',' => parsed_instructions.push(Instruction::Write),
+                b'[' => {
+                    loop_stack.push_back(i);
+                    parsed_instructions.push(Instruction::StartLoop(usize::MAX));
+                },
+                b']' => {
+                    let start = loop_stack.pop_back().unwrap();
+                    loop_map.insert(start, i);
+                    parsed_instructions.push(Instruction::EndLoop(usize::MAX));
+                },
+                _ => ()
+            }
+        }
+
+        // Updates indexes for loops
+        for (start, end) in loop_map {
+            parsed_instructions[start] = parsed_instructions[start].update_loop(end);
+            parsed_instructions[end] = parsed_instructions[end].update_loop(start);
         }
 
 
         let sdl_context = sdl2::init().unwrap();
-
         let canvas = sdl_context
                 .video()
                 .unwrap()
@@ -72,7 +102,7 @@ impl Brainfuck {
     fn render(&mut self) {
         self.canvas.set_draw_color(Color::RGB(0, 0, 0));
         self.canvas.clear();
-        self.canvas.set_draw_color(Color::RGB(256, 256, 256));
+        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
 
         let mut points = vec![];
 
@@ -122,8 +152,8 @@ impl Brainfuck {
             // Execute the Instruction
             let mut jumped = false;
             match self.instructions[i] {
-                Instruction::IncCell(n) => self.tape.inc_cell(n).unwrap(),
-                Instruction::DecCell(n) => self.tape.dec_cell(n).unwrap(),
+                Instruction::IncCell(n) => self.tape.inc_cell(n as u8).unwrap(),
+                Instruction::DecCell(n) => self.tape.dec_cell(n as u8).unwrap(),
                 Instruction::IncPtr(n) => self.tape.inc_ptr(n).unwrap(),
                 Instruction::DecPtr(n) => self.tape.dec_ptr(n).unwrap(),
                 Instruction::Write => self.tape.output(),

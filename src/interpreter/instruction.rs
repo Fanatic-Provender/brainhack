@@ -1,4 +1,5 @@
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Instruction {
     IncPtr(usize),
     DecPtr(usize),
