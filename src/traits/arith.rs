@@ -77,6 +77,23 @@ pub trait Arith: Logic {
             .seek(word.1)?
             .dec_val()
     }
+
+    fn add_word_move(
+        &mut self,
+        src: Word,
+        dest: Word,
+        temp_1: Pos,
+        temp_2: Pos,
+        temp_3: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.is_nonzero(src, temp_1, temp_2, temp_3)?
+            .while_(temp_1, |s| {
+                s.dec_word(src, temp_2, temp_3)?
+                    .inc_word(dest, temp_2, temp_3)?
+                    .clear_cell(&[temp_1])?
+                    .is_nonzero(src, temp_1, temp_2, temp_3)
+            })
+    }
 }
 impl<T: Logic> Arith for T {}
 
@@ -228,6 +245,25 @@ mod tests {
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 40, 0, 0], 0);
         test::compare_tape(coder.writer(), &[31, 0], 0, &[30, 255, 0, 0], 0);
         test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 40, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn add_word_move() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.add_word_move((0, 1), (2, 3), 4, 5, 6)?.seek(0)?;
+
+        eprintln!("{}", std::str::from_utf8(coder.writer())?);
+
+        test::compare_tape(coder.writer(), &[1, 2, 3, 4], 0, &[0, 0, 4, 6, 0, 0, 0], 0);
+        test::compare_tape(
+            coder.writer(),
+            &[1, 100, 3, 200],
+            0,
+            &[0, 0, 5, 44, 0, 0, 0],
+            0,
+        );
+        // TODO: more tests for overflowing (need another interpreter)
         Ok(())
     }
 }
