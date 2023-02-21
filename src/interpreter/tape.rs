@@ -28,7 +28,6 @@ In ASM              | In BrainFuck
 use sdl2::keyboard::Keycode;
 use anyhow::{Error, Result};
 
-
 const REGISTER_BUFFER: usize = 18;
 const SCREEN: usize = 24576;
 const RAM: usize = 49152;
@@ -52,42 +51,57 @@ impl Tape {
         }
     }
 
-    pub fn inc_ptr(&mut self) -> Result<()> {
-        if self.mem_ptr >= TAPE_SIZE {
-            Error::msg("Memory Pointer Overflow!");
+    pub fn inc_ptr(&mut self, i: usize) -> Result<()> {
+        if self.mem_ptr + i == TAPE_SIZE {
+            Err(Error::msg("Memory Pointer Out of bounds!"))
+        } else {
+            self.mem_ptr += i;
+            Ok(())
         }
-        self.mem_ptr += 1;
+        
+    }
+
+    pub fn dec_ptr(&mut self, i: usize) -> Result<()> {
+        match self.mem_ptr.checked_sub(i) {
+            Some(_) => {
+                self.mem_ptr -= i;
+                Ok(())
+            },
+            None => Err(Error::msg("Memory Pointer Below bounds!"))
+        }
+    }
+
+    pub fn inc_cell(&mut self, i: u8) -> Result<()> { 
+        self.mem_buffer[self.mem_ptr] = if self.cell_wrapping {
+            self.mem_buffer[self.mem_ptr].wrapping_add(i)
+        } else {
+            self.mem_buffer[self.mem_ptr]
+            .checked_add(i)
+            .ok_or(Error::msg("Cell Overflow!"))?
+        };
         Ok(())
     }
 
-    pub fn dec_ptr(&mut self) -> Result<()> {
-        if self.mem_ptr == 0 {
-            Error::msg("Memory Pointer Underflow!");
-        }
-        self.mem_ptr -= 1;
+    pub fn dec_cell(&mut self, i: u8) -> Result<()> {
+        self.mem_buffer[self.mem_ptr] = if self.cell_wrapping {
+            self.mem_buffer[self.mem_ptr].wrapping_sub(i)
+        } else {
+            self.mem_buffer[self.mem_ptr]
+            .checked_sub(i)
+            .ok_or(Error::msg("Cell Underflow!"))?
+        };
         Ok(())
     }
 
-    pub fn inc_cell(&mut self) -> Result<()> { 
-        if self.cell_wrapping {
-            self.mem_buffer[self.mem_ptr] = self.mem_buffer[self.mem_ptr].wrapping_add(1);
-        } else if self.mem_buffer[self.mem_ptr] == 255 {
-            Error::msg("Cell Overflow!");
-        } else {
-            self.mem_buffer[self.mem_ptr] += 1;
-        }
-        Ok(())
+    pub fn output(&self) {
+        print!("{}", self.mem_buffer[self.mem_ptr] as char);
     }
-    pub fn dec_cell(&mut self) -> Result<()> {
-        if self.cell_wrapping {
-            self.mem_buffer[self.mem_ptr] = self.mem_buffer[self.mem_ptr].wrapping_sub(1);
-        } else if self.mem_buffer[self.mem_ptr] == 0 {
-            Error::msg("Cell Underflow!");
-        } else {
-            self.mem_buffer[self.mem_ptr] -= 1;
-        }
-        Ok(())
+
+    pub fn input(&mut self) {
+        // This is not urgent as HackFuck does not use IO operations
+        todo!("Program input not yet implemented!");
     }
+
 
     pub fn cell(&self) -> u8 {
         self.mem_buffer[self.mem_ptr]
@@ -102,6 +116,6 @@ impl Tape {
     }
 
     pub fn update_kbd(&mut self, key: Keycode) {
-        todo!()
+        todo!("Updating keyboard in memory is not yet implemented, task is easy but tedious!");
     }
 }
