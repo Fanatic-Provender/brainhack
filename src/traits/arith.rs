@@ -20,7 +20,7 @@ pub trait Arith: Logic {
             .add_move_cell(src.1, &lower_dests)
     }
     fn move_word(&mut self, src: Word, dests: &[Word]) -> anyhow::Result<&mut Self> {
-        let dest_cells: Vec<_> = dests.iter().map(|w| [w.0, w.1]).flatten().collect();
+        let dest_cells: Vec<_> = dests.iter().flat_map(|w| [w.0, w.1]).collect();
 
         self.clear_cell(&dest_cells)?.add_move_word(src, dests)
     }
@@ -32,7 +32,7 @@ pub trait Arith: Logic {
             .add_copy_cell(src.1, &lower_dests, temp)
     }
     fn copy_word(&mut self, src: Word, dests: &[Word], temp: Pos) -> anyhow::Result<&mut Self> {
-        let dest_cells: Vec<_> = dests.iter().map(|w| [w.0, w.1]).flatten().collect();
+        let dest_cells: Vec<_> = dests.iter().flat_map(|w| [w.0, w.1]).collect();
 
         self.clear_cell(&dest_cells)?
             .add_copy_word(src, dests, temp)
