@@ -103,7 +103,7 @@ impl Tape {
     }
 
 
-    pub fn cell(&self) -> u8 {
+    pub fn get_cell(&self) -> u8 {
         self.mem_buffer[self.mem_ptr]
     }
 
@@ -117,5 +117,15 @@ impl Tape {
 
     pub fn update_kbd(&mut self, key: Keycode) {
         todo!("Updating keyboard in memory is not yet implemented, task is easy but tedious!");
+    }
+}
+
+#[cfg(test)]
+mod TapeTests {
+    use super::*;
+
+    #[test]
+    fn test_tape() {
+        todo!()
     }
 }

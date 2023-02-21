@@ -2,8 +2,8 @@
 pub enum Instruction {
     IncPtr(usize),
     DecPtr(usize),
-    IncCell(u8),
-    DecCell(u8),
+    IncCell(usize),
+    DecCell(usize),
     StartLoop(usize),
     EndLoop(usize),
     Read,
@@ -11,7 +11,38 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    // TODO: Find to char trait
+    pub fn from_byte(byte: u8) -> Option<Instruction> {
+        match byte {
+            b'>' => Some(Instruction::IncPtr(1)),
+            b'<' => Some(Instruction::DecPtr(1)),
+            b'+' => Some(Instruction::IncCell(1)),
+            b'-' => Some(Instruction::DecCell(1)),
+            b'[' => Some(Instruction::StartLoop(0)),
+            b']' => Some(Instruction::EndLoop(0)),
+            b',' => Some(Instruction::Read),
+            b'.' => Some(Instruction::Write),
+            _ => None
+        }
+    }
+    pub fn update_batch(self, n: usize) -> Self {
+        match self {
+            Instruction::IncPtr(x) => Instruction::IncPtr(x + n),
+            Instruction::DecPtr(x) => Instruction::DecPtr(x + n),
+            Instruction::IncCell(x) => Instruction::IncCell(x + n),
+            Instruction::DecCell(x) => Instruction::DecCell(x + n),
+            _ => self
+        }
+    }
+
+    pub fn update_loop(self, i: usize) -> Self {
+        match self {
+            Instruction::StartLoop(_) => Instruction::StartLoop(i),
+            Instruction::EndLoop(_) => Instruction::EndLoop(i),
+            _ => self
+        }
+    }
+
+    // TODO: Find to char trait and make better
     fn into_char(self) -> char {
         match self {
             Instruction::IncPtr(_) => '>',
