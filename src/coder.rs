@@ -1,10 +1,4 @@
-use {
-    crate::traits::{
-        core::{Core, CoreExt},
-        seek::{Pos, Seek},
-    },
-    std::io::Write,
-};
+use {crate::prelude::*, std::io::Write};
 
 #[derive(Debug)]
 pub struct Coder<W: Write> {

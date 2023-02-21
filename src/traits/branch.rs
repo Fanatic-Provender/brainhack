@@ -1,4 +1,4 @@
-use crate::traits::seek::{Pos, Seek};
+use crate::prelude::*;
 
 pub trait Branch: Seek {
     fn if_move<F>(&mut self, cond: Pos, f: F) -> anyhow::Result<&mut Self>

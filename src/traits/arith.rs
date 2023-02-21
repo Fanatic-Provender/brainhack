@@ -1,4 +1,4 @@
-use crate::traits::{logic::Logic, seek::Pos};
+use crate::prelude::*;
 
 pub type Word = (Pos, Pos);
 

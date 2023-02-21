@@ -1,4 +1,4 @@
-use crate::traits::core::CoreExt;
+use crate::prelude::*;
 
 pub type Pos = isize;
 

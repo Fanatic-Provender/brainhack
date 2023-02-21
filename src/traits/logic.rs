@@ -1,4 +1,4 @@
-use crate::traits::{branch::Branch, seek::Pos};
+use crate::prelude::*;
 
 pub trait Logic: Branch {
     fn logical_not_move(&mut self, src: Pos, dest: Pos) -> anyhow::Result<&mut Self> {
