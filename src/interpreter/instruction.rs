@@ -73,4 +73,29 @@ mod InstructionTests{
         assert_eq!(Instruction::Read.into_char(), ',');
         assert_eq!(Instruction::Write.into_char(), '.');
     }
+
+    #[test]
+    fn test_instruction_from_byte() {
+        assert_eq!(Instruction::from_byte(b'>'), Some(Instruction::IncPtr(1)));
+        assert_eq!(Instruction::from_byte(b'<'), Some(Instruction::DecPtr(1)));
+        assert_eq!(Instruction::from_byte(b'+'), Some(Instruction::IncCell(1)));
+        assert_eq!(Instruction::from_byte(b'-'), Some(Instruction::DecCell(1)));
+        assert_eq!(Instruction::from_byte(b'['), Some(Instruction::StartLoop(0)));
+        assert_eq!(Instruction::from_byte(b']'), Some(Instruction::EndLoop(0)));
+        assert_eq!(Instruction::from_byte(b','), Some(Instruction::Read));
+        assert_eq!(Instruction::from_byte(b'.'), Some(Instruction::Write));
+        assert_eq!(Instruction::from_byte(b' '), None);
+    }
+
+    #[test]
+    fn test_instruction_batch_update() {
+        // TODO: Write failing and edge case variants for this test too
+        todo!()
+    }
+
+    #[test]
+    fn test_instruction_loop_index() {
+        // TODO: Write failing and edge case variants for this test too
+        todo!()
+    }
 }
