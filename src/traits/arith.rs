@@ -54,6 +54,44 @@ pub trait Arith: Logic {
             .logical_not_move(temp_1, dest)
     }
 
+    fn is_lt_zero_move(
+        &mut self,
+        word: Word,
+        dest: Pos,
+        temp_1: Pos,
+        temp_2: Pos,
+        temp_3: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.is_nonzero(word, temp_1, temp_2, temp_3)?
+            .if_move(temp_1, |s| {
+                s.clear_cell(&[word.1])?
+                    .copy_cell(word.0, &[word.1], temp_1)?
+                    .while_cond(
+                        temp_1,
+                        |s| {
+                            s.clear_cell(&[temp_1])?
+                                .logical_and(word.0, word.1, temp_1, temp_2)
+                        },
+                        |s| s.seek(word.0)?.inc_val()?.seek(word.1)?.dec_val(),
+                    )?
+                    .logical_not_move(word.0, dest)
+            })?
+            .clear_cell(&[word.0, word.1])
+    }
+    fn is_lt_zero(
+        &mut self,
+        word: Word,
+        dest: Pos,
+        temp_1: Pos,
+        temp_2: Pos,
+        temp_3: Pos,
+        temp_4: Pos,
+        temp_5: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.copy_word(word, &[(temp_4, temp_5)], dest)?
+            .is_lt_zero_move((temp_4, temp_5), dest, temp_1, temp_2, temp_3)
+    }
+
     fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
         self.seek(word.1)?
             .inc_val()?
@@ -226,6 +264,32 @@ mod tests {
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 41, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[255, 0], 0, &[255, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 41, 0, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn is_lt_zero_move() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_lt_zero_move((0, 1), 2, 3, 4, 5)?.seek(0)?;
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[12, 34], 0, &[0, 0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[200, 100], 0, &[0, 0, 1, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[128, 0], 0, &[0, 0, 1, 0, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn is_lt_zero() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_lt_zero((0, 1), 2, 3, 4, 5, 6, 7)?.seek(0)?;
+
+        eprintln!("{}", std::str::from_utf8(coder.writer())?);
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[12, 34], 0, &[12, 34, 0, 0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[200, 6], 0, &[200, 6, 1, 0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[128, 0], 0, &[128, 0, 1, 0, 0, 0, 0, 0], 0);
         Ok(())
     }
 
