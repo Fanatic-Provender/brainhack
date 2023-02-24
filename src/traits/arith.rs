@@ -12,7 +12,7 @@ pub mod word {
 }
 
 pub trait Arith: Logic {
-    fn add_move_word(&mut self, src: Word, dests: &[Word]) -> anyhow::Result<&mut Self> {
+    fn initialize_move_word(&mut self, src: Word, dests: &[Word]) -> anyhow::Result<&mut Self> {
         let upper_dests: Vec<_> = dests.iter().map(|w| w.0).collect();
         let lower_dests: Vec<_> = dests.iter().map(|w| w.1).collect();
 
@@ -22,9 +22,15 @@ pub trait Arith: Logic {
     fn move_word(&mut self, src: Word, dests: &[Word]) -> anyhow::Result<&mut Self> {
         let dest_cells: Vec<_> = dests.iter().flat_map(|w| [w.0, w.1]).collect();
 
-        self.clear_cell(&dest_cells)?.add_move_word(src, dests)
+        self.clear_cell(&dest_cells)?
+            .initialize_move_word(src, dests)
     }
-    fn add_copy_word(&mut self, src: Word, dests: &[Word], temp: Pos) -> anyhow::Result<&mut Self> {
+    fn initialize_copy_word(
+        &mut self,
+        src: Word,
+        dests: &[Word],
+        temp: Pos,
+    ) -> anyhow::Result<&mut Self> {
         let upper_dests: Vec<_> = dests.iter().map(|w| w.0).collect();
         let lower_dests: Vec<_> = dests.iter().map(|w| w.1).collect();
 
@@ -35,7 +41,7 @@ pub trait Arith: Logic {
         let dest_cells: Vec<_> = dests.iter().flat_map(|w| [w.0, w.1]).collect();
 
         self.clear_cell(&dest_cells)?
-            .add_copy_word(src, dests, temp)
+            .initialize_copy_word(src, dests, temp)
     }
 
     fn is_nonzero_move(&mut self, word: Word, dest: Pos) -> anyhow::Result<&mut Self> {
@@ -109,10 +115,10 @@ mod tests {
     };
 
     #[test]
-    fn add_move_word() -> anyhow::Result<()> {
+    fn initialize_move_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .add_move_word(word::R, &[word::A, word::D, word::M])?
+            .initialize_move_word(word::R, &[word::A, word::D, word::M])?
             .seek(0)?;
 
         test::compare_tape(
@@ -143,10 +149,10 @@ mod tests {
     }
 
     #[test]
-    fn add_copy_word() -> anyhow::Result<()> {
+    fn initialize_copy_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .add_copy_word(word::R, &[word::A, word::D, word::M], pos::T0)?
+            .initialize_copy_word(word::R, &[word::A, word::D, word::M], pos::T0)?
             .seek(0)?;
 
         test::compare_tape(
