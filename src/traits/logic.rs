@@ -7,7 +7,7 @@ pub trait Logic: Branch {
             .if_move(src, |s| s.seek(dest)?.dec_val())
     }
     fn logical_not(&mut self, src: Pos, dest: Pos, temp: Pos) -> anyhow::Result<&mut Self> {
-        self.copy_cell(src, &[temp], dest)?
+        self.copy_cell_overwrite(src, &[temp], dest)?
             .logical_not_move(temp, dest)
     }
 
@@ -23,20 +23,20 @@ pub trait Logic: Branch {
         temp_1: Pos,
         temp_2: Pos,
     ) -> anyhow::Result<&mut Self> {
-        self.copy_cell(a, &[temp_1], dest)?
-            .copy_cell(b, &[temp_2], dest)?
+        self.copy_cell_overwrite(a, &[temp_1], dest)?
+            .copy_cell_overwrite(b, &[temp_2], dest)?
             .logical_or_move(temp_1, temp_2, dest)
     }
 
     fn logical_and_move(&mut self, a: Pos, b: Pos, dest: Pos) -> anyhow::Result<&mut Self> {
-        self.if_move(a, |s| s.move_cell(b, &[dest]))?
+        self.if_move(a, |s| s.move_cell_overwrite(b, &[dest]))?
             .seek(b)?
             .clear_val()
     }
     fn logical_and(&mut self, a: Pos, b: Pos, dest: Pos, temp: Pos) -> anyhow::Result<&mut Self> {
         // relies on if_move zeroing temp before calling f
-        self.copy_cell(a, &[temp], dest)?
-            .if_move(temp, |s| s.copy_cell(b, &[dest], temp))
+        self.copy_cell_overwrite(a, &[temp], dest)?
+            .if_move(temp, |s| s.copy_cell_overwrite(b, &[dest], temp))
     }
 }
 impl<T: Branch> Logic for T {}

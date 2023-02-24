@@ -16,8 +16,8 @@ pub trait Arith: Logic {
         let upper_dests: Vec<_> = dests.iter().map(|w| w.0).collect();
         let lower_dests: Vec<_> = dests.iter().map(|w| w.1).collect();
 
-        self.add_move_cell(src.0, &upper_dests)?
-            .add_move_cell(src.1, &lower_dests)
+        self.move_cell(src.0, &upper_dests)?
+            .move_cell(src.1, &lower_dests)
     }
     fn move_word(&mut self, src: Word, dests: &[Word]) -> anyhow::Result<&mut Self> {
         let dest_cells: Vec<_> = dests.iter().flat_map(|w| [w.0, w.1]).collect();
@@ -34,8 +34,8 @@ pub trait Arith: Logic {
         let upper_dests: Vec<_> = dests.iter().map(|w| w.0).collect();
         let lower_dests: Vec<_> = dests.iter().map(|w| w.1).collect();
 
-        self.add_copy_cell(src.0, &upper_dests, temp)?
-            .add_copy_cell(src.1, &lower_dests, temp)
+        self.copy_cell(src.0, &upper_dests, temp)?
+            .copy_cell(src.1, &lower_dests, temp)
     }
     fn copy_word(&mut self, src: Word, dests: &[Word], temp: Pos) -> anyhow::Result<&mut Self> {
         let dest_cells: Vec<_> = dests.iter().flat_map(|w| [w.0, w.1]).collect();
@@ -74,11 +74,11 @@ pub trait Arith: Logic {
     fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
         self.seek(word.1)?
             .inc_val()?
-            .copy_cell(word.1, &[temp_1], temp_2)?
+            .copy_cell_overwrite(word.1, &[temp_1], temp_2)?
             .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.inc_val())
     }
     fn dec_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
-        self.copy_cell(word.1, &[temp_1], temp_2)?
+        self.copy_cell_overwrite(word.1, &[temp_1], temp_2)?
             .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.dec_val())?
             .seek(word.1)?
             .dec_val()
