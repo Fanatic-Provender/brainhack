@@ -74,11 +74,11 @@ pub trait Arith: Logic {
     fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
         self.seek(word.1)?
             .inc_val()?
-            .copy_cell_overwrite(word.1, &[temp_1], temp_2)?
+            .copy_cell(word.1, &[temp_1], temp_2)?
             .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.inc_val())
     }
     fn dec_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
-        self.copy_cell_overwrite(word.1, &[temp_1], temp_2)?
+        self.copy_cell(word.1, &[temp_1], temp_2)?
             .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.dec_val())?
             .seek(word.1)?
             .dec_val()

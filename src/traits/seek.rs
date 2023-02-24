@@ -50,22 +50,11 @@ pub trait Seek: CoreExt {
             Ok(s)
         })
     }
-    fn move_cell_overwrite(&mut self, src: Pos, dests: &[Pos]) -> anyhow::Result<&mut Self> {
-        self.clear_cell(dests)?.move_cell(src, dests)
-    }
     fn copy_cell(&mut self, src: Pos, dests: &[Pos], temp: Pos) -> anyhow::Result<&mut Self> {
         let mut dests_temp = dests.to_vec();
         dests_temp.push(temp);
 
         self.move_cell(src, &dests_temp)?.move_cell(temp, &[src])
-    }
-    fn copy_cell_overwrite(
-        &mut self,
-        src: Pos,
-        dests: &[Pos],
-        temp: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.clear_cell(dests)?.copy_cell(src, dests, temp)
     }
 }
 
@@ -95,7 +84,7 @@ mod tests {
     }
 
     #[test]
-    fn add_move_cell() -> anyhow::Result<()> {
+    fn move_cell() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder.move_cell(2, &[0, 1, 3, 4])?;
 
@@ -104,29 +93,11 @@ mod tests {
     }
 
     #[test]
-    fn move_cell() -> anyhow::Result<()> {
-        let mut coder = Coder::new(vec![]);
-        coder.move_cell_overwrite(2, &[0, 1, 3, 4])?;
-
-        test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[4, 4, 0, 4, 4], 2);
-        Ok(())
-    }
-
-    #[test]
-    fn add_copy_cell() -> anyhow::Result<()> {
+    fn copy_cell() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder.copy_cell(2, &[0, 1, 3, 4], 5)?;
 
         test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[7, 5, 4, 5, 9], 5);
-        Ok(())
-    }
-
-    #[test]
-    fn copy_cell() -> anyhow::Result<()> {
-        let mut coder = Coder::new(vec![]);
-        coder.copy_cell_overwrite(2, &[0, 1, 3, 4], 5)?;
-
-        test::compare_tape(coder.writer(), &[3, 1, 4, 1, 5], 0, &[4, 4, 4, 4, 4], 5);
         Ok(())
     }
 }
