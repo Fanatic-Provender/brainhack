@@ -34,6 +34,13 @@ pub trait Seek: CoreExt {
     {
         self.seek(cond)?.loop_(|s| f(s)?.seek(cond))
     }
+    fn while_cond<F, G>(&mut self, cond: Pos, mut f_cond: F, g: G) -> anyhow::Result<&mut Self>
+    where
+        F: FnMut(&mut Self) -> anyhow::Result<&mut Self>,
+        G: FnOnce(&mut Self) -> anyhow::Result<&mut Self>,
+    {
+        f_cond(self)?.while_(cond, |s| f_cond(g(s)?))
+    }
 
     fn clear_cell(&mut self, cells: &[Pos]) -> anyhow::Result<&mut Self> {
         for &cell in cells {
@@ -71,6 +78,21 @@ mod tests {
         coder.while_(0, |c| c.dec_val()?.seek(1)?.inc_val_by(3))?;
 
         test::compare_tape(coder.writer(), &[5], 0, &[0, 15], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn while_cond() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .while_cond(
+                2,
+                |c| c.clear_cell(&[2])?.copy_cell(0, &[2], 3),
+                |c| c.seek(0)?.dec_val()?.seek(1)?.inc_val_by(3),
+            )?
+            .seek(0)?;
+
+        test::compare_tape(coder.writer(), &[5, 2], 0, &[0, 17, 0, 0], 0);
         Ok(())
     }
 
