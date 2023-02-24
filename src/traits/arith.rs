@@ -75,13 +75,17 @@ pub trait Arith: Logic {
         temp_2: Pos,
         temp_3: Pos,
     ) -> anyhow::Result<&mut Self> {
-        self.is_nonzero(src, temp_1, temp_2, temp_3)?
-            .while_(temp_1, |s| {
-                s.dec_word(src, temp_2, temp_3)?
-                    .inc_word(dest, temp_2, temp_3)?
-                    .clear_cell(&[temp_1])?
+        self.while_cond(
+            temp_1,
+            |s| {
+                s.clear_cell(&[temp_1])?
                     .is_nonzero(src, temp_1, temp_2, temp_3)
-            })
+            },
+            |s| {
+                s.dec_word(src, temp_2, temp_3)?
+                    .inc_word(dest, temp_2, temp_3)
+            },
+        )
     }
     fn add_word(
         &mut self,
@@ -104,13 +108,17 @@ pub trait Arith: Logic {
         temp_2: Pos,
         temp_3: Pos,
     ) -> anyhow::Result<&mut Self> {
-        self.is_nonzero(src, temp_1, temp_2, temp_3)?
-            .while_(temp_1, |s| {
-                s.dec_word(src, temp_2, temp_3)?
-                    .dec_word(dest, temp_2, temp_3)?
-                    .clear_cell(&[temp_1])?
+        self.while_cond(
+            temp_1,
+            |s| {
+                s.clear_cell(&[temp_1])?
                     .is_nonzero(src, temp_1, temp_2, temp_3)
-            })
+            },
+            |s| {
+                s.dec_word(src, temp_2, temp_3)?
+                    .dec_word(dest, temp_2, temp_3)
+            },
+        )
     }
     fn sub_word(
         &mut self,
