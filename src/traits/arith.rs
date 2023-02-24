@@ -371,8 +371,6 @@ mod tests {
         let mut coder = Coder::new(vec![]);
         coder.is_le_zero((0, 1), 2, 3, 4, 5, 6, 7, 8)?.seek(0)?;
 
-        eprintln!("{}", std::str::from_utf8(coder.writer())?);
-
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 0, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(
@@ -417,8 +415,6 @@ mod tests {
         let mut coder = Coder::new(vec![]);
         coder.is_ge_zero((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
 
-        eprintln!("{}", std::str::from_utf8(coder.writer())?);
-
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 1, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[12, 34], 0, &[12, 34, 24, 0, 0, 0, 0], 0);
@@ -444,8 +440,6 @@ mod tests {
     fn is_lt_zero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder.is_lt_zero((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
-
-        eprintln!("{}", std::str::from_utf8(coder.writer())?);
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 0, 0, 0, 0, 0], 0);
