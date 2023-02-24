@@ -253,8 +253,6 @@ mod tests {
         let mut coder = Coder::new(vec![]);
         coder.add_word_move((0, 1), (2, 3), 4, 5, 6)?.seek(0)?;
 
-        eprintln!("{}", std::str::from_utf8(coder.writer())?);
-
         test::compare_tape(coder.writer(), &[1, 2, 3, 4], 0, &[0, 0, 4, 6, 0, 0, 0], 0);
         test::compare_tape(
             coder.writer(),
@@ -263,7 +261,29 @@ mod tests {
             &[0, 0, 5, 44, 0, 0, 0],
             0,
         );
-        // TODO: more tests for overflowing (need another interpreter)
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "exceeds CYCLE_LIMIT imposed by the brainfuck crate"]
+    fn add_word_move_long() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.add_word_move((0, 1), (2, 3), 4, 5, 6)?.seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[100, 3, 200, 4],
+            0,
+            &[0, 0, 44, 7, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[100, 150, 200, 250],
+            0,
+            &[0, 0, 45, 144, 0, 0, 0],
+            0,
+        );
         Ok(())
     }
 }
