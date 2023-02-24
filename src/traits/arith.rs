@@ -100,6 +100,19 @@ pub trait Arith: Logic {
                     .is_nonzero(src, temp_1, temp_2, temp_3)
             })
     }
+    fn add_word(
+        &mut self,
+        src: Word,
+        dest: Word,
+        temp_1: Pos,
+        temp_2: Pos,
+        temp_3: Pos,
+        temp_4: Pos,
+        temp_5: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.copy_word(src, &[(temp_1, temp_2)], temp_3)?
+            .add_word_move((temp_1, temp_2), dest, temp_3, temp_4, temp_5)
+    }
 }
 impl<T: Logic> Arith for T {}
 
@@ -288,6 +301,51 @@ mod tests {
             &[100, 150, 200, 250],
             0,
             &[0, 0, 45, 144, 0, 0, 0],
+            0,
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn add_word() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.add_word((0, 1), (2, 3), 4, 5, 6, 7, 8)?.seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[1, 2, 3, 4],
+            0,
+            &[1, 2, 4, 6, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[1, 100, 3, 200],
+            0,
+            &[1, 100, 5, 44, 0, 0, 0, 0, 0],
+            0,
+        );
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "exceeds CYCLE_LIMIT imposed by the brainfuck crate"]
+    fn add_word_long() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.add_word((0, 1), (2, 3), 4, 5, 6, 7, 8)?.seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[100, 3, 200, 4],
+            0,
+            &[100, 3, 44, 7, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[100, 150, 200, 250],
+            0,
+            &[100, 150, 45, 144, 0, 0, 0, 0, 0],
             0,
         );
         Ok(())
