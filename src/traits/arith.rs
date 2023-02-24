@@ -112,6 +112,19 @@ pub trait Arith: Logic {
                     .is_nonzero(src, temp_1, temp_2, temp_3)
             })
     }
+    fn sub_word(
+        &mut self,
+        src: Word,
+        dest: Word,
+        temp_1: Pos,
+        temp_2: Pos,
+        temp_3: Pos,
+        temp_4: Pos,
+        temp_5: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.copy_word(src, &[(temp_1, temp_2)], temp_3)?
+            .sub_word_move((temp_1, temp_2), dest, temp_3, temp_4, temp_5)
+    }
 }
 impl<T: Logic> Arith for T {}
 
@@ -341,6 +354,42 @@ mod tests {
             &[3, 4, 1, 2],
             0,
             &[0, 0, 253, 254, 0, 0, 0],
+            0,
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn sub_word() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.sub_word((0, 1), (2, 3), 4, 5, 6, 7, 8)?.seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[1, 2, 3, 4],
+            0,
+            &[1, 2, 2, 2, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[1, 4, 3, 2],
+            0,
+            &[1, 4, 1, 254, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[3, 2, 1, 4],
+            0,
+            &[3, 2, 254, 2, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[3, 4, 1, 2],
+            0,
+            &[3, 4, 253, 254, 0, 0, 0, 0, 0],
             0,
         );
         Ok(())
