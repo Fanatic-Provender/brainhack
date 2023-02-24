@@ -82,6 +82,18 @@ pub trait Arith: Logic {
             )?
             .clear_cell(&[word.1])
     }
+    fn is_ge_zero(
+        &mut self,
+        word: Word,
+        dest: Pos,
+        temp_1: Pos,
+        temp_2: Pos,
+        temp_3: Pos,
+        temp_4: Pos,
+    ) -> anyhow::Result<&mut Self> {
+        self.copy_word(word, &[(temp_1, temp_2)], dest)?
+            .is_ge_zero_move((temp_1, temp_2), dest, temp_3, temp_4)
+    }
 
     fn is_lt_zero_move(
         &mut self,
@@ -291,6 +303,21 @@ mod tests {
         test::compare_tape(coder.writer(), &[12, 34], 0, &[0, 0, 24, 0, 0], 0);
         test::compare_tape(coder.writer(), &[200, 100], 0, &[0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[128, 0], 0, &[0, 0, 0, 0, 0], 0);
+        Ok(())
+    }
+
+    #[test]
+    fn is_ge_zero() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder.is_ge_zero((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
+
+        eprintln!("{}", std::str::from_utf8(coder.writer())?);
+
+        test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 1, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[12, 34], 0, &[12, 34, 24, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[200, 6], 0, &[200, 6, 0, 0, 0, 0, 0], 0);
+        test::compare_tape(coder.writer(), &[128, 0], 0, &[128, 0, 0, 0, 0, 0, 0], 0);
         Ok(())
     }
 
