@@ -3,12 +3,13 @@ use crate::prelude::*;
 pub type Word = (Pos, Pos);
 
 pub mod word {
-    use super::Word;
+    use super::{pos::*, Word};
 
-    pub const A: Word = (0, 1);
-    pub const D: Word = (3, 4);
-    pub const M: Word = (6, 7);
-    pub const R: Word = (9, 10);
+    pub const A: Word = (AU, AL);
+    pub const D: Word = (DU, DL);
+    pub const M: Word = (MU, ML);
+    pub const P: Word = (PU, PL);
+    pub const R: Word = (RU, RL);
 }
 
 pub trait Arith: Logic {
