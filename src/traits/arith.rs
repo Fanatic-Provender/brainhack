@@ -276,7 +276,7 @@ mod tests {
     fn move_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .move_word(word::R, &[word::A, word::D, word::M])?
+            .move_word(word::P, &[word::A, word::D, word::M])?
             .seek(0)?;
 
         test::compare_tape(
@@ -293,7 +293,7 @@ mod tests {
     fn copy_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .copy_word(word::R, &[word::A, word::D, word::M], pos::T0)?
+            .copy_word(word::P, &[word::A, word::D, word::M], pos::T0)?
             .seek(0)?;
 
         test::compare_tape(
