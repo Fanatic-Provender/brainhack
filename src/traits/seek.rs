@@ -14,19 +14,21 @@ pub mod pos {
     pub const MU: Pos = 6;
     pub const ML: Pos = 7;
     pub const T2: Pos = 8;
-    pub const RU: Pos = 9;
-    pub const RL: Pos = 10;
+    pub const PU: Pos = 9;
+    pub const PL: Pos = 10;
     pub const T3: Pos = 11;
-    pub const F: Pos = 12;
-    pub const T4: Pos = 13;
-    pub const T5: Pos = 14;
-    pub const T6: Pos = 15;
-    pub const T7: Pos = 16;
-    pub const T8: Pos = 17;
+    pub const RU: Pos = 12;
+    pub const RL: Pos = 13;
+    pub const T4: Pos = 14;
+    pub const F: Pos = 15;
+    pub const T5: Pos = 16;
+    pub const T6: Pos = 17;
+    pub const G0: Pos = 20;
 }
 
 pub trait Seek: CoreExt {
     fn seek(&mut self, pos: Pos) -> anyhow::Result<&mut Self>;
+    fn set_pos(&mut self, pos: Pos) -> anyhow::Result<&mut Self>;
 
     fn while_<F>(&mut self, cond: Pos, f: F) -> anyhow::Result<&mut Self>
     where

@@ -3,12 +3,13 @@ use crate::prelude::*;
 pub type Word = (Pos, Pos);
 
 pub mod word {
-    use super::Word;
+    use super::{pos::*, Word};
 
-    pub const A: Word = (0, 1);
-    pub const D: Word = (3, 4);
-    pub const M: Word = (6, 7);
-    pub const R: Word = (9, 10);
+    pub const A: Word = (AU, AL);
+    pub const D: Word = (DU, DL);
+    pub const M: Word = (MU, ML);
+    pub const P: Word = (PU, PL);
+    pub const R: Word = (RU, RL);
 }
 
 pub trait Arith: Logic {
@@ -275,7 +276,7 @@ mod tests {
     fn move_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .move_word(word::R, &[word::A, word::D, word::M])?
+            .move_word(word::P, &[word::A, word::D, word::M])?
             .seek(0)?;
 
         test::compare_tape(
@@ -292,7 +293,7 @@ mod tests {
     fn copy_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .copy_word(word::R, &[word::A, word::D, word::M], pos::T0)?
+            .copy_word(word::P, &[word::A, word::D, word::M], pos::T0)?
             .seek(0)?;
 
         test::compare_tape(

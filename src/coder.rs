@@ -57,6 +57,10 @@ impl<W: Write> Seek for Coder<W> {
         let delta = pos - self.location;
         self.change_ptr_by(delta)
     }
+    fn set_pos(&mut self, pos: Pos) -> anyhow::Result<&mut Self> {
+        self.location = pos;
+        Ok(self)
+    }
 }
 
 #[cfg(test)]
@@ -91,9 +95,12 @@ mod tests {
             .seek(-4)?
             .inc_val_by(1)?
             .seek(1)?
-            .inc_val_by(8)?;
+            .inc_val_by(8)?
+            .set_pos(1)?
+            .seek(-2)?
+            .inc_val_by(9)?;
 
-        test::compare_tape(coder.writer(), &[], 4, &[1, 0, 0, 0, 0, 8, 7, 2], 5);
+        test::compare_tape(coder.writer(), &[], 4, &[1, 0, 9, 0, 0, 8, 7, 2], 2);
         Ok(())
     }
 }

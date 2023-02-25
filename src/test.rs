@@ -1,5 +1,6 @@
 use {
     brainfuck::{program::Program, tape::ModArrayTape, Interpreter},
+    pretty_assertions::assert_eq,
     std::io::Cursor,
 };
 
