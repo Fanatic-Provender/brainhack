@@ -5,25 +5,26 @@ pub type Pos = isize;
 pub mod pos {
     use super::Pos;
 
-    pub const AU: Pos = 0;
-    pub const AL: Pos = 1;
-    pub const T0: Pos = 2;
-    pub const DU: Pos = 3;
-    pub const DL: Pos = 4;
-    pub const T1: Pos = 5;
-    pub const MU: Pos = 6;
-    pub const ML: Pos = 7;
-    pub const T2: Pos = 8;
-    pub const PU: Pos = 9;
-    pub const PL: Pos = 10;
-    pub const T3: Pos = 11;
-    pub const RU: Pos = 12;
-    pub const RL: Pos = 13;
-    pub const T4: Pos = 14;
-    pub const F: Pos = 15;
-    pub const T5: Pos = 16;
+    pub const T0: Pos = 0;
+    pub const AU: Pos = 1;
+    pub const AL: Pos = 2;
+    pub const T1: Pos = 3;
+    pub const DU: Pos = 4;
+    pub const DL: Pos = 5;
+    pub const T2: Pos = 6;
+    pub const MU: Pos = 7;
+    pub const ML: Pos = 8;
+    pub const T3: Pos = 9;
+    pub const PU: Pos = 10;
+    pub const PL: Pos = 11;
+    pub const T4: Pos = 12;
+    pub const RU: Pos = 13;
+    pub const RL: Pos = 14;
+    pub const T5: Pos = 15;
+    pub const F: Pos = 16;
     pub const T6: Pos = 17;
-    pub const G0: Pos = 20;
+    pub const T7: Pos = 18;
+    pub const G0: Pos = 21;
 }
 
 pub trait Seek: CoreExt {
