@@ -27,12 +27,18 @@ pub trait Memory: Arith {
             .set_pos(m_pos::G0)?
             .while_cond(
                 m_pos::G0,
-                |s| s.is_nonzero((m_pos::GM2, m_pos::GM1), m_pos::G0, m_pos::GM4, m_pos::GM3),
+                |s| {
+                    s.is_nonzero(
+                        (m_pos::GM2, m_pos::GM1),
+                        m_pos::G0,
+                        [m_pos::GM4, m_pos::GM3],
+                    )
+                },
                 |s| {
                     s.clear_cell(&[m_pos::G0])?
                         .move_cell(m_pos::GM1, &[m_pos::G0])?
                         .move_cell(m_pos::GM2, &[m_pos::GM1])?
-                        .dec_word((m_pos::GM1, m_pos::G0), m_pos::GM3, m_pos::GM2)?
+                        .dec_word((m_pos::GM1, m_pos::G0), [m_pos::GM3, m_pos::GM2])?
                         .seek(m_pos::GM4)?
                         .inc_val()?
                         .seek(m_pos::G1)?
@@ -72,14 +78,20 @@ pub trait Memory: Arith {
             .set_pos(m_pos::G0)?
             .while_cond(
                 m_pos::G0,
-                |s| s.is_nonzero((m_pos::GM2, m_pos::GM1), m_pos::G0, m_pos::GM6, m_pos::GM5),
+                |s| {
+                    s.is_nonzero(
+                        (m_pos::GM2, m_pos::GM1),
+                        m_pos::G0,
+                        [m_pos::GM6, m_pos::GM5],
+                    )
+                },
                 |s| {
                     s.clear_cell(&[m_pos::G0])?
                         .move_cell(m_pos::GM1, &[m_pos::G0])?
                         .move_cell(m_pos::GM2, &[m_pos::GM1])?
                         .move_cell(m_pos::GM3, &[m_pos::GM2])?
                         .move_cell(m_pos::GM4, &[m_pos::GM3])?
-                        .dec_word((m_pos::GM1, m_pos::G0), m_pos::GM5, m_pos::GM4)?
+                        .dec_word((m_pos::GM1, m_pos::G0), [m_pos::GM5, m_pos::GM4])?
                         .seek(m_pos::GM6)?
                         .inc_val()?
                         .seek(m_pos::G1)?

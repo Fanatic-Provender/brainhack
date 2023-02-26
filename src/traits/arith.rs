@@ -31,82 +31,60 @@ pub trait Arith: Logic {
     fn is_nonzero_move(&mut self, word: Word, dest: Pos) -> anyhow::Result<&mut Self> {
         self.logical_or_move(word.0, word.1, dest)
     }
-    fn is_nonzero(
-        &mut self,
-        word: Word,
-        dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.logical_or(word.0, word.1, dest, temp_1, temp_2)
+    fn is_nonzero(&mut self, word: Word, dest: Pos, temp: [Pos; 2]) -> anyhow::Result<&mut Self> {
+        self.logical_or(word.0, word.1, dest, [temp[0], temp[1]])
     }
     fn is_zero_move(&mut self, word: Word, dest: Pos, temp: Pos) -> anyhow::Result<&mut Self> {
         self.is_nonzero_move(word, temp)?
             .logical_not_move(temp, dest)
     }
-    fn is_zero(
-        &mut self,
-        word: Word,
-        dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.is_nonzero(word, temp_1, dest, temp_2)?
-            .logical_not_move(temp_1, dest)
+    fn is_zero(&mut self, word: Word, dest: Pos, temp: [Pos; 2]) -> anyhow::Result<&mut Self> {
+        self.is_nonzero(word, temp[0], [dest, temp[1]])?
+            .logical_not_move(temp[0], dest)
     }
 
     fn is_le_zero_move(
         &mut self,
         word: Word,
         dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
+        temp: [Pos; 4],
     ) -> anyhow::Result<&mut Self> {
-        self.copy_word(word, &[(temp_1, temp_2)], temp_3)?
-            .is_zero_move((temp_1, temp_2), temp_3, temp_4)?
+        self.copy_word(word, &[(temp[0], temp[1])], temp[2])?
+            .is_zero_move((temp[0], temp[1]), temp[2], temp[3])?
             .if_else_move(
-                temp_3,
-                temp_4,
+                temp[2],
+                temp[3],
                 |s| s.seek(dest)?.inc_val()?.clear_cell(&[word.0, word.1]),
-                |s| s.is_lt_zero_move(word, dest, temp_1, temp_2),
+                |s| s.is_lt_zero_move(word, dest, [temp[0], temp[1]]),
             )
     }
-    fn is_le_zero(
-        &mut self,
-        word: Word,
-        dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
-        temp_5: Pos,
-        temp_6: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.copy_word(word, &[(temp_1, temp_2)], dest)?
-            .is_le_zero_move((temp_1, temp_2), dest, temp_3, temp_4, temp_5, temp_6)
+    fn is_le_zero(&mut self, word: Word, dest: Pos, temp: [Pos; 6]) -> anyhow::Result<&mut Self> {
+        self.copy_word(word, &[(temp[0], temp[1])], dest)?
+            .is_le_zero_move(
+                (temp[0], temp[1]),
+                dest,
+                [temp[2], temp[3], temp[4], temp[5]],
+            )
     }
 
     fn is_ge_zero_move(
         &mut self,
         word: Word,
         dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
+        temp: [Pos; 2],
     ) -> anyhow::Result<&mut Self> {
-        self.copy_cell(word.0, &[temp_1], temp_2)?
+        self.copy_cell(word.0, &[temp[0]], temp[1])?
             .if_else_move(
-                temp_1,
-                temp_2,
+                temp[0],
+                temp[1],
                 |s| {
                     s.clear_cell(&[word.1])?
-                        .copy_cell(word.0, &[word.1], temp_1)?
+                        .copy_cell(word.0, &[word.1], temp[0])?
                         .while_cond(
-                            temp_1,
+                            temp[0],
                             |s| {
-                                s.clear_cell(&[temp_1])?
-                                    .logical_and(word.0, word.1, temp_1, temp_2)
+                                s.clear_cell(&[temp[0]])?
+                                    .logical_and(word.0, word.1, temp[0], temp[1])
                             },
                             |s| s.seek(word.0)?.inc_val()?.seek(word.1)?.dec_val(),
                         )?
@@ -116,78 +94,52 @@ pub trait Arith: Logic {
             )?
             .clear_cell(&[word.1])
     }
-    fn is_ge_zero(
-        &mut self,
-        word: Word,
-        dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.copy_word(word, &[(temp_1, temp_2)], dest)?
-            .is_ge_zero_move((temp_1, temp_2), dest, temp_3, temp_4)
+    fn is_ge_zero(&mut self, word: Word, dest: Pos, temp: [Pos; 4]) -> anyhow::Result<&mut Self> {
+        self.copy_word(word, &[(temp[0], temp[1])], dest)?
+            .is_ge_zero_move((temp[0], temp[1]), dest, [temp[2], temp[3]])
     }
 
     fn is_lt_zero_move(
         &mut self,
         word: Word,
         dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
+        temp: [Pos; 2],
     ) -> anyhow::Result<&mut Self> {
-        self.is_ge_zero_move(word, temp_1, dest, temp_2)?
-            .logical_not_move(temp_1, dest)
+        self.is_ge_zero_move(word, temp[0], [dest, temp[1]])?
+            .logical_not_move(temp[0], dest)
     }
-    fn is_lt_zero(
-        &mut self,
-        word: Word,
-        dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.copy_word(word, &[(temp_1, temp_2)], dest)?
-            .is_lt_zero_move((temp_1, temp_2), dest, temp_3, temp_4)
+    fn is_lt_zero(&mut self, word: Word, dest: Pos, temp: [Pos; 4]) -> anyhow::Result<&mut Self> {
+        self.copy_word(word, &[(temp[0], temp[1])], dest)?
+            .is_lt_zero_move((temp[0], temp[1]), dest, [temp[2], temp[3]])
     }
 
     fn is_gt_zero_move(
         &mut self,
         word: Word,
         dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
+        temp: [Pos; 4],
     ) -> anyhow::Result<&mut Self> {
-        self.is_le_zero_move(word, temp_1, dest, temp_2, temp_3, temp_4)?
-            .logical_not_move(temp_1, dest)
+        self.is_le_zero_move(word, temp[0], [dest, temp[1], temp[2], temp[3]])?
+            .logical_not_move(temp[0], dest)
     }
-    fn is_gt_zero(
-        &mut self,
-        word: Word,
-        dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
-        temp_5: Pos,
-        temp_6: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.copy_word(word, &[(temp_1, temp_2)], dest)?
-            .is_gt_zero_move((temp_1, temp_2), dest, temp_3, temp_4, temp_5, temp_6)
+    fn is_gt_zero(&mut self, word: Word, dest: Pos, temp: [Pos; 6]) -> anyhow::Result<&mut Self> {
+        self.copy_word(word, &[(temp[0], temp[1])], dest)?
+            .is_gt_zero_move(
+                (temp[0], temp[1]),
+                dest,
+                [temp[2], temp[3], temp[4], temp[5]],
+            )
     }
 
-    fn inc_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
+    fn inc_word(&mut self, word: Word, temp: [Pos; 2]) -> anyhow::Result<&mut Self> {
         self.seek(word.1)?
             .inc_val()?
-            .copy_cell(word.1, &[temp_1], temp_2)?
-            .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.inc_val())
+            .copy_cell(word.1, &[temp[0]], temp[1])?
+            .if_else_move(temp[0], temp[1], |s| Ok(s), |s| s.seek(word.0)?.inc_val())
     }
-    fn dec_word(&mut self, word: Word, temp_1: Pos, temp_2: Pos) -> anyhow::Result<&mut Self> {
-        self.copy_cell(word.1, &[temp_1], temp_2)?
-            .if_else_move(temp_1, temp_2, |s| Ok(s), |s| s.seek(word.0)?.dec_val())?
+    fn dec_word(&mut self, word: Word, temp: [Pos; 2]) -> anyhow::Result<&mut Self> {
+        self.copy_cell(word.1, &[temp[0]], temp[1])?
+            .if_else_move(temp[0], temp[1], |s| Ok(s), |s| s.seek(word.0)?.dec_val())?
             .seek(word.1)?
             .dec_val()
     }
@@ -196,67 +148,45 @@ pub trait Arith: Logic {
         &mut self,
         src: Word,
         dest: Word,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
+        temp: [Pos; 3],
     ) -> anyhow::Result<&mut Self> {
         self.while_cond(
-            temp_1,
+            temp[0],
             |s| {
-                s.clear_cell(&[temp_1])?
-                    .is_nonzero(src, temp_1, temp_2, temp_3)
+                s.clear_cell(&[temp[0]])?
+                    .is_nonzero(src, temp[0], [temp[1], temp[2]])
             },
             |s| {
-                s.dec_word(src, temp_2, temp_3)?
-                    .inc_word(dest, temp_2, temp_3)
+                s.dec_word(src, [temp[1], temp[2]])?
+                    .inc_word(dest, [temp[1], temp[2]])
             },
         )
     }
-    fn add_word(
-        &mut self,
-        src: Word,
-        dest: Word,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
-        temp_5: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.copy_word(src, &[(temp_1, temp_2)], temp_3)?
-            .add_word_move((temp_1, temp_2), dest, temp_3, temp_4, temp_5)
+    fn add_word(&mut self, src: Word, dest: Word, temp: [Pos; 5]) -> anyhow::Result<&mut Self> {
+        self.copy_word(src, &[(temp[0], temp[1])], temp[2])?
+            .add_word_move((temp[0], temp[1]), dest, [temp[2], temp[3], temp[4]])
     }
     fn sub_word_move(
         &mut self,
         src: Word,
         dest: Word,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
+        temp: [Pos; 3],
     ) -> anyhow::Result<&mut Self> {
         self.while_cond(
-            temp_1,
+            temp[0],
             |s| {
-                s.clear_cell(&[temp_1])?
-                    .is_nonzero(src, temp_1, temp_2, temp_3)
+                s.clear_cell(&[temp[0]])?
+                    .is_nonzero(src, temp[0], [temp[1], temp[2]])
             },
             |s| {
-                s.dec_word(src, temp_2, temp_3)?
-                    .dec_word(dest, temp_2, temp_3)
+                s.dec_word(src, [temp[1], temp[2]])?
+                    .dec_word(dest, [temp[1], temp[2]])
             },
         )
     }
-    fn sub_word(
-        &mut self,
-        src: Word,
-        dest: Word,
-        temp_1: Pos,
-        temp_2: Pos,
-        temp_3: Pos,
-        temp_4: Pos,
-        temp_5: Pos,
-    ) -> anyhow::Result<&mut Self> {
-        self.copy_word(src, &[(temp_1, temp_2)], temp_3)?
-            .sub_word_move((temp_1, temp_2), dest, temp_3, temp_4, temp_5)
+    fn sub_word(&mut self, src: Word, dest: Word, temp: [Pos; 5]) -> anyhow::Result<&mut Self> {
+        self.copy_word(src, &[(temp[0], temp[1])], temp[2])?
+            .sub_word_move((temp[0], temp[1]), dest, [temp[2], temp[3], temp[4]])
     }
 }
 impl<T: Logic> Arith for T {}
@@ -321,7 +251,7 @@ mod tests {
     #[test]
     fn is_nonzero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_nonzero((0, 1), 2, 3, 4)?.seek(0)?;
+        coder.is_nonzero((0, 1), 2, [3, 4])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 41, 1, 0, 0], 0);
@@ -345,7 +275,7 @@ mod tests {
     #[test]
     fn is_zero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_zero((0, 1), 2, 3, 4)?.seek(0)?;
+        coder.is_zero((0, 1), 2, [3, 4])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 41, 0, 0, 0], 0);
@@ -357,7 +287,7 @@ mod tests {
     #[test]
     fn is_le_zero_move() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_le_zero_move((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
+        coder.is_le_zero_move((0, 1), 2, [3, 4, 5, 6])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 0, 0, 0, 0, 0, 0], 0);
@@ -370,7 +300,7 @@ mod tests {
     #[test]
     fn is_le_zero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_le_zero((0, 1), 2, 3, 4, 5, 6, 7, 8)?.seek(0)?;
+        coder.is_le_zero((0, 1), 2, [3, 4, 5, 6, 7, 8])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 0, 0, 0, 0, 0, 0, 0], 0);
@@ -401,7 +331,7 @@ mod tests {
     #[test]
     fn is_ge_zero_move() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_ge_zero_move((0, 1), 2, 3, 4)?.seek(0)?;
+        coder.is_ge_zero_move((0, 1), 2, [3, 4])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 0, 1, 0, 0], 0);
@@ -414,7 +344,7 @@ mod tests {
     #[test]
     fn is_ge_zero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_ge_zero((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
+        coder.is_ge_zero((0, 1), 2, [3, 4, 5, 6])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 1, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 1, 0, 0, 0, 0], 0);
@@ -427,7 +357,7 @@ mod tests {
     #[test]
     fn is_lt_zero_move() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_lt_zero_move((0, 1), 2, 3, 4)?.seek(0)?;
+        coder.is_lt_zero_move((0, 1), 2, [3, 4])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 0, 0, 0, 0], 0);
@@ -440,7 +370,7 @@ mod tests {
     #[test]
     fn is_lt_zero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_lt_zero((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
+        coder.is_lt_zero((0, 1), 2, [3, 4, 5, 6])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 0, 0, 0, 0, 0], 0);
@@ -453,7 +383,7 @@ mod tests {
     #[test]
     fn is_gt_zero_move() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_gt_zero_move((0, 1), 2, 3, 4, 5, 6)?.seek(0)?;
+        coder.is_gt_zero_move((0, 1), 2, [3, 4, 5, 6])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 0, 1, 0, 0, 0, 0], 0);
@@ -466,7 +396,7 @@ mod tests {
     #[test]
     fn is_gt_zero() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.is_gt_zero((0, 1), 2, 3, 4, 5, 6, 7, 8)?.seek(0)?;
+        coder.is_gt_zero((0, 1), 2, [3, 4, 5, 6, 7, 8])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 5], 0, &[0, 5, 1, 0, 0, 0, 0, 0, 0], 0);
@@ -497,7 +427,7 @@ mod tests {
     #[test]
     fn inc_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.inc_word((0, 1), 2, 3)?.seek(0)?;
+        coder.inc_word((0, 1), [2, 3])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 42, 0, 0], 0);
         test::compare_tape(coder.writer(), &[31, 41], 0, &[31, 42, 0, 0], 0);
@@ -509,7 +439,7 @@ mod tests {
     #[test]
     fn dec_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.dec_word((0, 1), 2, 3)?.seek(0)?;
+        coder.dec_word((0, 1), [2, 3])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[255, 255, 0, 0], 0);
         test::compare_tape(coder.writer(), &[0, 41], 0, &[0, 40, 0, 0], 0);
@@ -521,7 +451,7 @@ mod tests {
     #[test]
     fn add_word_move() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.add_word_move((0, 1), (2, 3), 4, 5, 6)?.seek(0)?;
+        coder.add_word_move((0, 1), (2, 3), [4, 5, 6])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[1, 2, 3, 4], 0, &[0, 0, 4, 6, 0, 0, 0], 0);
         test::compare_tape(
@@ -538,7 +468,7 @@ mod tests {
     #[ignore = "exceeds CYCLE_LIMIT imposed by the brainfuck crate"]
     fn add_word_move_long() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.add_word_move((0, 1), (2, 3), 4, 5, 6)?.seek(0)?;
+        coder.add_word_move((0, 1), (2, 3), [4, 5, 6])?.seek(0)?;
 
         test::compare_tape(
             coder.writer(),
@@ -560,7 +490,7 @@ mod tests {
     #[test]
     fn add_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.add_word((0, 1), (2, 3), 4, 5, 6, 7, 8)?.seek(0)?;
+        coder.add_word((0, 1), (2, 3), [4, 5, 6, 7, 8])?.seek(0)?;
 
         test::compare_tape(
             coder.writer(),
@@ -583,7 +513,7 @@ mod tests {
     #[ignore = "exceeds CYCLE_LIMIT imposed by the brainfuck crate"]
     fn add_word_long() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.add_word((0, 1), (2, 3), 4, 5, 6, 7, 8)?.seek(0)?;
+        coder.add_word((0, 1), (2, 3), [4, 5, 6, 7, 8])?.seek(0)?;
 
         test::compare_tape(
             coder.writer(),
@@ -605,7 +535,7 @@ mod tests {
     #[test]
     fn sub_word_move() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.sub_word_move((0, 1), (2, 3), 4, 5, 6)?.seek(0)?;
+        coder.sub_word_move((0, 1), (2, 3), [4, 5, 6])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[1, 2, 3, 4], 0, &[0, 0, 2, 2, 0, 0, 0], 0);
         test::compare_tape(
@@ -635,7 +565,7 @@ mod tests {
     #[test]
     fn sub_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.sub_word((0, 1), (2, 3), 4, 5, 6, 7, 8)?.seek(0)?;
+        coder.sub_word((0, 1), (2, 3), [4, 5, 6, 7, 8])?.seek(0)?;
 
         test::compare_tape(
             coder.writer(),

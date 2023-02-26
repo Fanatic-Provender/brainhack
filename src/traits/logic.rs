@@ -20,12 +20,11 @@ pub trait Logic: Branch {
         a: Pos,
         b: Pos,
         dest: Pos,
-        temp_1: Pos,
-        temp_2: Pos,
+        temp: [Pos; 2],
     ) -> anyhow::Result<&mut Self> {
-        self.copy_cell(a, &[temp_1], dest)?
-            .copy_cell(b, &[temp_2], dest)?
-            .logical_or_move(temp_1, temp_2, dest)
+        self.copy_cell(a, &[temp[0]], dest)?
+            .copy_cell(b, &[temp[1]], dest)?
+            .logical_or_move(temp[0], temp[1], dest)
     }
 
     fn logical_and_move(&mut self, a: Pos, b: Pos, dest: Pos) -> anyhow::Result<&mut Self> {
@@ -84,7 +83,7 @@ mod tests {
     #[test]
     fn logical_or() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
-        coder.logical_or(0, 1, 2, 3, 4)?.seek(0)?;
+        coder.logical_or(0, 1, 2, [3, 4])?.seek(0)?;
 
         test::compare_tape(coder.writer(), &[0, 0], 0, &[0, 0, 0, 0, 0], 0);
         test::compare_tape(coder.writer(), &[3, 0], 0, &[3, 0, 1, 0, 0], 0);
