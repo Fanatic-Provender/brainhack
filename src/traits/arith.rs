@@ -27,6 +27,13 @@ pub trait Arith: Logic {
         self.copy_cell(src.0, &upper_dests, temp)?
             .copy_cell(src.1, &lower_dests, temp)
     }
+    fn set_word(&mut self, word: Word, value: u16) -> anyhow::Result<&mut Self> {
+        let [upper, lower] = value.to_be_bytes();
+        self.seek(word.0)?
+            .set_val(upper)?
+            .seek(word.1)?
+            .set_val(lower)
+    }
 
     fn is_nonzero_move(&mut self, word: Word, dest: Pos) -> anyhow::Result<&mut Self> {
         self.logical_or_move(word.0, word.1, dest)
@@ -231,6 +238,25 @@ mod tests {
             &[0, 3, 1, 0, 1, 5, 9, 2, 6, 5, 3, 5],
             0,
             &[0, 6, 6, 0, 4, 10, 9, 5, 11, 5, 3, 5],
+            0,
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn set_word() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .set_word((0, 2), 31 * 256 + 41)?
+            .set_word((1, 4), 59 * 256 + 26)?
+            .set_word((3, 5), 53 * 256 + 59)?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[27, 18, 28, 18, 28, 46],
+            0,
+            &[31, 59, 41, 53, 26, 59],
             0,
         );
         Ok(())
