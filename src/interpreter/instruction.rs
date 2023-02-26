@@ -1,101 +1,71 @@
+use anyhow::{bail, Result};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
 pub enum Instruction {
-    IncPtr(usize),
-    DecPtr(usize),
-    IncCell(usize),
-    DecCell(usize),
-    StartLoop(usize),
-    EndLoop(usize),
-    Read,
-    Write
+    IncPtr(usize),         // Batch size
+    DecPtr(usize),         // Batch size
+    IncCell(usize, isize), // Batch size, mem_ptr offset
+    DecCell(usize, isize), // Batch size, mem_ptr offset
+    StartLoop(usize),      // Index of matching EndLoop
+    EndLoop(usize),        // Index of matching StartLoop
+    BreakPoint,
 }
 
 impl Instruction {
-    pub fn from_byte(byte: u8) -> Option<Instruction> {
-        match byte {
-            b'>' => Some(Instruction::IncPtr(1)),
-            b'<' => Some(Instruction::DecPtr(1)),
-            b'+' => Some(Instruction::IncCell(1)),
-            b'-' => Some(Instruction::DecCell(1)),
-            b'[' => Some(Instruction::StartLoop(0)),
-            b']' => Some(Instruction::EndLoop(0)),
-            b',' => Some(Instruction::Read),
-            b'.' => Some(Instruction::Write),
-            _ => None
-        }
-    }
-    pub fn update_batch(self, n: usize) -> Self {
+    pub fn to_byte(self) -> u8 {
         match self {
-            Instruction::IncPtr(x) => Instruction::IncPtr(x + n),
-            Instruction::DecPtr(x) => Instruction::DecPtr(x + n),
-            Instruction::IncCell(x) => Instruction::IncCell(x + n),
-            Instruction::DecCell(x) => Instruction::DecCell(x + n),
-            _ => self
+            Instruction::IncPtr(_) => b'>',
+            Instruction::DecPtr(_) => b'<',
+            Instruction::IncCell(_, _) => b'+',
+            Instruction::DecCell(_, _) => b'-',
+            Instruction::StartLoop(_) => b'[',
+            Instruction::EndLoop(_) => b']',
+            Instruction::BreakPoint => b'*',
         }
     }
 
-    pub fn update_loop(self, i: usize) -> Self {
+    pub(super) fn update_batch(&mut self, batch_size: usize) -> Result<()> {
         match self {
-            Instruction::StartLoop(_) => Instruction::StartLoop(i),
-            Instruction::EndLoop(_) => Instruction::EndLoop(i),
-            _ => self
+            Instruction::IncPtr(batch) => *batch = batch_size,
+            Instruction::DecPtr(batch) => *batch = batch_size,
+            Instruction::IncCell(batch, _) => *batch = batch_size,
+            Instruction::DecCell(batch, _) => *batch = batch_size,
+            _ => bail!("Cannot update batch size of this instruction"),
         }
+        Ok(())
     }
 
-    // TODO: Find to char trait and make better
-    fn into_char(self) -> char {
+    pub(super) fn update_offset(&mut self, offset: isize) -> Result<()> {
         match self {
-            Instruction::IncPtr(_) => '>',
-            Instruction::DecPtr(_) => '<',
-            Instruction::IncCell(_) => '+',
-            Instruction::DecCell(_) => '-',
-            Instruction::StartLoop(_) => '[',
-            Instruction::EndLoop(_) => ']',
-            Instruction::Read => ',',
-            Instruction::Write => '.'
+            Instruction::IncCell(_, mem_ptr_offset) => *mem_ptr_offset = offset,
+            Instruction::DecCell(_, mem_ptr_offset) => *mem_ptr_offset = offset,
+            _ => bail!("Cannot update memory pointer offset of this instruction"),
+        }
+        Ok(())
+    }
+
+    pub(super) fn update_loop(&mut self, index: usize) -> Result<()> {
+        match self {
+            Instruction::StartLoop(i) => *i = index,
+            Instruction::EndLoop(i) => *i = index,
+            _ => bail!("Cannot update loop index of this instruction"),
+        }
+        Ok(())
+    }
+
+    pub(super) fn cell_op(&self) -> bool {
+        if let &Instruction::IncCell(_, _) | &Instruction::DecCell(_, _) = self {
+            true
+        } else {
+            false
         }
     }
-}
 
-#[cfg(test)]
-mod InstructionTests{
-    use super::*;
-
-    #[test]
-    fn test_instruction_to_char() {
-        assert_eq!(Instruction::IncPtr(1).into_char(), '>');
-        assert_eq!(Instruction::DecPtr(1).into_char(), '<');
-        assert_eq!(Instruction::IncCell(1).into_char(), '+');
-        assert_eq!(Instruction::DecCell(1).into_char(), '-');
-        assert_eq!(Instruction::StartLoop(1).into_char(), '[');
-        assert_eq!(Instruction::EndLoop(1).into_char(), ']');
-        assert_eq!(Instruction::Read.into_char(), ',');
-        assert_eq!(Instruction::Write.into_char(), '.');
-    }
-
-    #[test]
-    fn test_instruction_from_byte() {
-        assert_eq!(Instruction::from_byte(b'>'), Some(Instruction::IncPtr(1)));
-        assert_eq!(Instruction::from_byte(b'<'), Some(Instruction::DecPtr(1)));
-        assert_eq!(Instruction::from_byte(b'+'), Some(Instruction::IncCell(1)));
-        assert_eq!(Instruction::from_byte(b'-'), Some(Instruction::DecCell(1)));
-        assert_eq!(Instruction::from_byte(b'['), Some(Instruction::StartLoop(0)));
-        assert_eq!(Instruction::from_byte(b']'), Some(Instruction::EndLoop(0)));
-        assert_eq!(Instruction::from_byte(b','), Some(Instruction::Read));
-        assert_eq!(Instruction::from_byte(b'.'), Some(Instruction::Write));
-        assert_eq!(Instruction::from_byte(b' '), None);
-    }
-
-    #[test]
-    fn test_instruction_batch_update() {
-        // TODO: Write failing and edge case variants for this test too
-        todo!()
-    }
-
-    #[test]
-    fn test_instruction_loop_index() {
-        // TODO: Write failing and edge case variants for this test too
-        todo!()
+    pub(super) fn mem_op(&self) -> bool {
+        if let &Instruction::IncPtr(_) | &Instruction::DecPtr(_) = self {
+            true
+        } else {
+            false
+        }
     }
 }
