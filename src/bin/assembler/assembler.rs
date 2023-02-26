@@ -34,15 +34,15 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
     let symbol_table = scan_symbols(file.clone())?;
 
     coder.while_cond(
-        pos::F,
+        pos::FU,
         |c| {
-            c.copy_word(word::P, &[word::R], pos::T6)?
-                .inc_word(word::R, [pos::T6, pos::T7])?
-                .is_nonzero_move(word::R, pos::F)
+            c.copy_word(word::P, &[word::Q], pos::VU)?
+                .inc_word(word::Q, [pos::VU, pos::VL])?
+                .is_nonzero_move(word::Q, pos::FU)
         },
         |c| {
-            c.clear_cell(&[pos::F])?
-                .copy_word(word::P, &[word::R], pos::T6)?;
+            c.clear_cell(&[pos::FU])?
+                .copy_word(word::P, &[word::Q], pos::VU)?;
 
             for line in file.into_inner() {
                 match line.as_rule() {
@@ -72,19 +72,19 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                         let value = u16::try_from(value)
                             .map_err(|_| anyhow!("invalid constant '{}'", spec))?;
 
-                        c.inc_word(word::R, [pos::T6, pos::T7])?
-                            .is_nonzero(word::R, pos::F, [pos::T6, pos::T7])?
+                        c.inc_word(word::Q, [pos::VU, pos::VL])?
+                            .is_nonzero(word::Q, pos::FU, [pos::VU, pos::VL])?
                             .if_else_move(
-                                pos::F,
-                                pos::T6,
+                                pos::FU,
+                                pos::FL,
                                 |c| {
-                                    c.dec_word(word::R, [pos::T4, pos::T5])?
-                                        .is_zero(word::R, pos::F, [pos::T4, pos::T5])?
-                                        .if_move(pos::F, |c| {
-                                            c.set_word(word::A, value)?.seek(6)?.write("#")
+                                    c.dec_word(word::Q, [pos::VU, pos::VL])?
+                                        .is_zero(word::Q, pos::FU, [pos::VU, pos::VL])?
+                                        .if_move(pos::FU, |c| {
+                                            c.set_word(word::A, value)?.seek(5)?.write("#")
                                         })
                                 },
-                                |c| c.dec_word(word::R, [pos::T4, pos::T5]),
+                                |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
                             )?;
                     }
                     Rule::c_instruction => {
@@ -159,9 +159,9 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                     }
                     Rule::label_definition => {}
                     Rule::EOI => {
-                        return c.is_zero_move(word::R, pos::F, pos::T6)?.if_else_move(
-                            pos::F,
-                            pos::T6,
+                        return c.is_zero_move(word::Q, pos::FU, pos::VU)?.if_else_move(
+                            pos::FU,
+                            pos::FL,
                             |c| {
                                 c.clear_cell(&[pos::PU, pos::PL])?
                                     .seek(pos::PU)?
@@ -169,13 +169,13 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                     .seek(pos::PL)?
                                     .dec_val()
                             },
-                            |c| c.inc_word(word::P, [pos::T4, pos::T5]),
+                            |c| c.inc_word(word::P, [pos::VU, pos::VL]),
                         )
                     }
                     _ => unreachable!(),
                 }
 
-                c.dec_word(word::R, [pos::T4, pos::T5])?;
+                c.dec_word(word::Q, [pos::VU, pos::VL])?;
             }
 
             unreachable!()
