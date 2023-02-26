@@ -5,6 +5,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.69"
+clap = { version = "4.1.6", features = ["derive"] }
+itertools = "0.10.5"
+pest = "2.5.5"
+pest_derive = "2.5.5"
 
 [dev-dependencies]
 brainfuck = "0.2.1"
