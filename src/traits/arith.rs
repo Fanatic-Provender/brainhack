@@ -9,7 +9,11 @@ pub mod word {
     pub const D: Word = (DU, DL);
     pub const M: Word = (MU, ML);
     pub const P: Word = (PU, PL);
+    pub const Q: Word = (QU, QL);
     pub const R: Word = (RU, RL);
+    pub const F: Word = (FU, FL);
+    pub const V: Word = (VU, VL);
+    pub const W: Word = (WU, WL);
 }
 
 pub trait Arith: Logic {
@@ -202,18 +206,14 @@ impl<T: Logic> Arith for T {}
 mod tests {
     use {
         super::*,
-        crate::{
-            coder::Coder,
-            test,
-            traits::seek::{pos, Seek},
-        },
+        crate::{coder::Coder, test, traits::seek::Seek},
     };
 
     #[test]
     fn move_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .move_word(word::P, &[word::A, word::D, word::M])?
+            .move_word((10, 11), &[(1, 2), (4, 5), (7, 8)])?
             .seek(0)?;
 
         test::compare_tape(
@@ -230,7 +230,7 @@ mod tests {
     fn copy_word() -> anyhow::Result<()> {
         let mut coder = Coder::new(vec![]);
         coder
-            .copy_word(word::P, &[word::A, word::D, word::M], pos::T0)?
+            .copy_word((10, 11), &[(1, 2), (4, 5), (7, 8)], 0)?
             .seek(0)?;
 
         test::compare_tape(
