@@ -105,9 +105,7 @@ impl<T: Arith> Memory for T {}
 
 #[cfg(test)]
 mod tests {
-    use crate::test;
-
-    use super::*;
+    use {super::*, crate::test};
 
     #[test]
     fn read_memory() -> anyhow::Result<()> {
