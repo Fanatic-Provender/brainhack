@@ -28,7 +28,7 @@ fn main() -> anyhow::Result<()> {
         output_file = File::create(path)?;
         &mut output_file
     } else if !cli.stdout && source_path.extension() == Some("asm".as_ref()) {
-        output_file = File::create(source_path.with_extension("hack"))?;
+        output_file = File::create(source_path.with_extension("bf"))?;
         &mut output_file
     } else {
         stdout_lock = io::stdout().lock();

@@ -1,10 +1,12 @@
-use std::collections::hash_map::Entry;
-
 use {
     crate::parser::{HackPair, Rule},
     anyhow::{anyhow, bail},
+    brainhack::prelude::*,
     itertools::Itertools,
-    std::{collections::HashMap, io::Write},
+    std::{
+        collections::{hash_map::Entry, HashMap},
+        io::Write,
+    },
 };
 
 #[derive(Clone, Debug)]
@@ -16,7 +18,6 @@ pub struct SymbolData {
 type SymbolTable = HashMap<String, SymbolData>;
 
 const RESERVED_REGISTERS: usize = 16;
-const INSTRUCTION_WIDTH: usize = 16;
 const ADDRESS_SPACE_SIZE: usize = 32768;
 static KEYWORDS: &[(&str, usize)] = &[
     ("SP", 0),
@@ -28,116 +29,160 @@ static KEYWORDS: &[(&str, usize)] = &[
     ("KBD", 24576),
 ];
 
-pub fn assemble<W: Write>(file: HackPair, mut out: W) -> anyhow::Result<()> {
+pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
+    let mut coder = Coder::new(out);
     let symbol_table = scan_symbols(file.clone())?;
 
-    for line in file.into_inner() {
-        match line.as_rule() {
-            Rule::a_instruction => {
-                let spec = line.into_inner().exactly_one().unwrap();
+    coder.while_cond(
+        pos::F,
+        |c| {
+            c.copy_word(word::P, &[word::R], pos::T6)?
+                .inc_word(word::R, [pos::T6, pos::T7])?
+                .is_nonzero_move(word::R, pos::F)
+        },
+        |c| {
+            c.clear_cell(&[pos::F])?
+                .copy_word(word::P, &[word::R], pos::T6)?;
 
-                let value = match spec.as_rule() {
-                    Rule::constant => {
-                        let spec = spec.as_str();
-                        let value = spec
-                            .parse()
+            for line in file.into_inner() {
+                match line.as_rule() {
+                    Rule::a_instruction => {
+                        let spec = line.into_inner().exactly_one().unwrap();
+
+                        let value = match spec.as_rule() {
+                            Rule::constant => {
+                                let spec = spec.as_str();
+                                let value = spec
+                                    .parse()
+                                    .map_err(|_| anyhow!("invalid constant '{}'", spec))?;
+                                if (0..ADDRESS_SPACE_SIZE).contains(&value) {
+                                    value
+                                } else {
+                                    bail!("invalid constant '{}'", spec)
+                                }
+                            }
+                            Rule::symbol => {
+                                symbol_table
+                                    .get(spec.as_str())
+                                    .expect("incomplete symbol table")
+                                    .value
+                            }
+                            _ => unreachable!(),
+                        };
+                        let value = u16::try_from(value)
                             .map_err(|_| anyhow!("invalid constant '{}'", spec))?;
-                        if (0..ADDRESS_SPACE_SIZE).contains(&value) {
-                            value
-                        } else {
-                            bail!("invalid constant '{}'", spec)
-                        }
+
+                        c.inc_word(word::R, [pos::T6, pos::T7])?
+                            .is_nonzero(word::R, pos::F, [pos::T6, pos::T7])?
+                            .if_else_move(
+                                pos::F,
+                                pos::T6,
+                                |c| {
+                                    c.dec_word(word::R, [pos::T4, pos::T5])?
+                                        .is_zero(word::R, pos::F, [pos::T4, pos::T5])?
+                                        .if_move(pos::F, |c| {
+                                            c.set_word(word::A, value)?.seek(6)?.write("#")
+                                        })
+                                },
+                                |c| c.dec_word(word::R, [pos::T4, pos::T5]),
+                            )?;
                     }
-                    Rule::symbol => {
-                        symbol_table
-                            .get(spec.as_str())
-                            .expect("incomplete symbol table")
-                            .value
+                    Rule::c_instruction => {
+                        let mut dest = "";
+                        let mut comp = "";
+                        let mut jump = "";
+
+                        for spec in line.into_inner() {
+                            match spec.as_rule() {
+                                Rule::dest => dest = spec.as_str(),
+                                Rule::comp => comp = spec.as_str(),
+                                Rule::jump => jump = spec.as_str(),
+                                _ => unreachable!(),
+                            }
+                        }
+
+                        let dest_code =
+                            match (dest.contains('A'), dest.contains('D'), dest.contains('M')) {
+                                (false, false, false) => "000",
+                                (false, false, true) => "001",
+                                (false, true, false) => "010",
+                                (false, true, true) => "011",
+                                (true, false, false) => "100",
+                                (true, false, true) => "101",
+                                (true, true, false) => "110",
+                                (true, true, true) => "111",
+                            };
+                        let a_comp_code = match comp {
+                            "0" => "0101010",
+                            "1" => "0111111",
+                            "-1" => "0111010",
+                            "D" => "0001100",
+                            "A" => "0110000",
+                            "M" => "1110000",
+                            "!D" => "0001101",
+                            "!A" => "0110001",
+                            "!M" => "1110001",
+                            "-D" => "0001111",
+                            "-A" => "0110011",
+                            "-M" => "1110011",
+                            "D+1" => "0011111",
+                            "A+1" => "0110111",
+                            "M+1" => "1110111",
+                            "D-1" => "0001110",
+                            "A-1" => "0110010",
+                            "M-1" => "1110010",
+                            "D+A" => "0000010",
+                            "D+M" => "1000010",
+                            "D-A" => "0010011",
+                            "D-M" => "1010011",
+                            "A-D" => "0000111",
+                            "M-D" => "1000111",
+                            "D&A" => "0000000",
+                            "D&M" => "1000000",
+                            "D|A" => "0010101",
+                            "D|M" => "1010101",
+                            _ => bail!("invalid computation '{}'", comp),
+                        };
+                        let jump_code = match jump {
+                            "" => "000",
+                            "JGT" => "001",
+                            "JEQ" => "010",
+                            "JGE" => "011",
+                            "JLT" => "100",
+                            "JNE" => "101",
+                            "JLE" => "110",
+                            "JMP" => "111",
+                            _ => bail!("invalid jump '{}'", jump),
+                        };
+
+                        todo!("C instruction")
+                    }
+                    Rule::label_definition => {}
+                    Rule::EOI => {
+                        return c.is_zero_move(word::R, pos::F, pos::T6)?.if_else_move(
+                            pos::F,
+                            pos::T6,
+                            |c| {
+                                c.clear_cell(&[pos::PU, pos::PL])?
+                                    .seek(pos::PU)?
+                                    .dec_val()?
+                                    .seek(pos::PL)?
+                                    .dec_val()
+                            },
+                            |c| c.inc_word(word::P, [pos::T4, pos::T5]),
+                        )
                     }
                     _ => unreachable!(),
-                };
-
-                todo!("A instruction")
-            }
-            Rule::c_instruction => {
-                let mut dest = "";
-                let mut comp = "";
-                let mut jump = "";
-
-                for spec in line.into_inner() {
-                    match spec.as_rule() {
-                        Rule::dest => dest = spec.as_str(),
-                        Rule::comp => comp = spec.as_str(),
-                        Rule::jump => jump = spec.as_str(),
-                        _ => unreachable!(),
-                    }
                 }
 
-                #[rustfmt::skip]
-                let dest_code = match (dest.contains('A'), dest.contains('D'), dest.contains('M')) {
-                    (false, false, false) => "000",
-                    (false, false,  true) => "001",
-                    (false,  true, false) => "010",
-                    (false,  true,  true) => "011",
-                    ( true, false, false) => "100",
-                    ( true, false,  true) => "101",
-                    ( true,  true, false) => "110",
-                    ( true,  true,  true) => "111",
-                };
-                #[rustfmt::skip]
-                let a_comp_code = match comp {
-                      "0" => "0101010",
-                      "1" => "0111111",
-                     "-1" => "0111010",
-                      "D" => "0001100",
-                      "A" => "0110000",
-                      "M" => "1110000",
-                     "!D" => "0001101",
-                     "!A" => "0110001",
-                     "!M" => "1110001",
-                     "-D" => "0001111",
-                     "-A" => "0110011",
-                     "-M" => "1110011",
-                    "D+1" => "0011111",
-                    "A+1" => "0110111",
-                    "M+1" => "1110111",
-                    "D-1" => "0001110",
-                    "A-1" => "0110010",
-                    "M-1" => "1110010",
-                    "D+A" => "0000010",
-                    "D+M" => "1000010",
-                    "D-A" => "0010011",
-                    "D-M" => "1010011",
-                    "A-D" => "0000111",
-                    "M-D" => "1000111",
-                    "D&A" => "0000000",
-                    "D&M" => "1000000",
-                    "D|A" => "0010101",
-                    "D|M" => "1010101",
-                        _ => bail!("invalid computation '{}'", comp)
-                };
-                #[rustfmt::skip]
-                let jump_code = match jump {
-                       "" => "000",
-                    "JGT" => "001",
-                    "JEQ" => "010",
-                    "JGE" => "011",
-                    "JLT" => "100",
-                    "JNE" => "101",
-                    "JLE" => "110",
-                    "JMP" => "111",
-                        _ => bail!("invalid jump '{}'", jump)
-                };
-
-                todo!("C instruction")
+                c.dec_word(word::R, [pos::T4, pos::T5])?;
             }
-            Rule::label_definition => {}
-            Rule::EOI => return Ok(()),
-            _ => unreachable!(),
-        }
-    }
 
-    unreachable!()
+            unreachable!()
+        },
+    )?;
+
+    Ok(coder.into_writer())
 }
 
 pub fn scan_symbols(file: HackPair) -> anyhow::Result<SymbolTable> {
