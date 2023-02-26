@@ -26,11 +26,11 @@ In ASM              | In BrainFuck
 */
 
 
-use super::utils::pause;
+use super::utils::{pause, };
 use anyhow::{bail, Result};
 use std::io::Read;
 
-pub const REGISTER_BUFFER: usize = 18;
+pub const REGISTER_BUFFER: usize = 19;
 pub const SCREEN: usize = 24576;
 pub const RAM: usize = 49152;
 pub const KBD: usize = 3;
@@ -109,20 +109,20 @@ impl Tape {
             self.mem_buffer[16],
             self.mem_buffer[17],
             self.mem_buffer[18],
-            self.mem_buffer[TAPE_SIZE - 2],
-            self.mem_buffer[TAPE_SIZE - 1]
+            self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN],
+            self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN + 1]
         );
         eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+\n");
         eprintln!("+----------+-------+");
         eprintln!("| Register | Value |");
         eprintln!("+----------+-------+");
-        eprintln!("|     A    |{: ^7}|", 5); // TODO: replace with 16 Bit representation
+        eprintln!("|     A    |{: ^7}|", 256*self.mem_buffer[1] as u32 + self.mem_buffer[2] as u32);
         eprintln!("+----------+-------+");
-        eprintln!("|     D    |{: ^7}|", 5); // TODO: replace with 16 Bit representation
+        eprintln!("|     D    |{: ^7}|", 256*self.mem_buffer[4] as u32 + self.mem_buffer[5] as u32);
         eprintln!("+----------+-------+");
-        eprintln!("|     M    |{: ^7}|", 5); // TODO: replace with 16 Bit representation
+        eprintln!("|     M    |{: ^7}|", 256*self.mem_buffer[7] as u32 + self.mem_buffer[8] as u32);
         eprintln!("+----------+-------+");
-        eprintln!("|    KBD   |{: ^7}|", 5); // TODO: replace with Pressed key representation
+        eprintln!("|    KBD   |{: ^7}|", "TBA"); // TODO: replace with Pressed key representation
         eprintln!("+----------+-------+");
         pause()
     }
