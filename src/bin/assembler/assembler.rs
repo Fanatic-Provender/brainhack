@@ -172,7 +172,127 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                         ],
                                                     )?;
                                                 }
-                                                _ => unreachable!(
+                                                "D+1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::D, &[word::R], pos::VU)?
+                                                        .inc_word(word::R, [pos::VU, pos::VL])?;
+                                                }
+                                                "A+1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::A, &[word::R], pos::VU)?
+                                                        .inc_word(word::R, [pos::VU, pos::VL])?;
+                                                }
+                                                "M+1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::M, &[word::R], pos::VU)?
+                                                        .inc_word(word::R, [pos::VU, pos::VL])?;
+                                                }
+                                                "D-1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::D, &[word::R], pos::VU)?
+                                                        .dec_word(word::R, [pos::VU, pos::VL])?;
+                                                }
+                                                "A-1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::A, &[word::R], pos::VU)?
+                                                        .dec_word(word::R, [pos::VU, pos::VL])?;
+                                                }
+                                                "M-1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::M, &[word::R], pos::VU)?
+                                                        .dec_word(word::R, [pos::VU, pos::VL])?;
+                                                }
+                                                "D+A" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::D, &[word::R], pos::VU)?
+                                                        .add_word(
+                                                            word::A,
+                                                            word::R,
+                                                            [
+                                                                pos::VU,
+                                                                pos::VL,
+                                                                pos::T7,
+                                                                pos::WU,
+                                                                pos::WL,
+                                                            ],
+                                                        )?;
+                                                }
+                                                "D+M" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::D, &[word::R], pos::VU)?
+                                                        .add_word(
+                                                            word::M,
+                                                            word::R,
+                                                            [
+                                                                pos::VU,
+                                                                pos::VL,
+                                                                pos::T7,
+                                                                pos::WU,
+                                                                pos::WL,
+                                                            ],
+                                                        )?;
+                                                }
+                                                "D-A" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::D, &[word::R], pos::VU)?
+                                                        .sub_word(
+                                                            word::A,
+                                                            word::R,
+                                                            [
+                                                                pos::VU,
+                                                                pos::VL,
+                                                                pos::T7,
+                                                                pos::WU,
+                                                                pos::WL,
+                                                            ],
+                                                        )?;
+                                                }
+                                                "D-M" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::D, &[word::R], pos::VU)?
+                                                        .sub_word(
+                                                            word::M,
+                                                            word::R,
+                                                            [
+                                                                pos::VU,
+                                                                pos::VL,
+                                                                pos::T7,
+                                                                pos::WU,
+                                                                pos::WL,
+                                                            ],
+                                                        )?;
+                                                }
+                                                "A-D" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::A, &[word::R], pos::VU)?
+                                                        .sub_word(
+                                                            word::D,
+                                                            word::R,
+                                                            [
+                                                                pos::VU,
+                                                                pos::VL,
+                                                                pos::T7,
+                                                                pos::WU,
+                                                                pos::WL,
+                                                            ],
+                                                        )?;
+                                                }
+                                                "M-D" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .copy_word(word::M, &[word::R], pos::VU)?
+                                                        .sub_word(
+                                                            word::D,
+                                                            word::R,
+                                                            [
+                                                                pos::VU,
+                                                                pos::VL,
+                                                                pos::T7,
+                                                                pos::WU,
+                                                                pos::WL,
+                                                            ],
+                                                        )?;
+                                                }
+                                                _ => todo!(
                                                     "unsupported comp specification '{}'",
                                                     comp
                                                 ),
