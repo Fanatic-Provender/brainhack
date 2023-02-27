@@ -2,7 +2,7 @@ use {
     crate::parser::{HackPair, Rule},
     anyhow::{anyhow, bail},
     brainhack::prelude::*,
-    itertools::Itertools,
+    itertools::{chain, Itertools},
     std::{
         collections::{hash_map::Entry, HashMap},
         io::Write,
@@ -101,61 +101,102 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                             }
                         }
 
-                        let dest_code =
-                            match (dest.contains('A'), dest.contains('D'), dest.contains('M')) {
-                                (false, false, false) => "000",
-                                (false, false, true) => "001",
-                                (false, true, false) => "010",
-                                (false, true, true) => "011",
-                                (true, false, false) => "100",
-                                (true, false, true) => "101",
-                                (true, true, false) => "110",
-                                (true, true, true) => "111",
-                            };
-                        let a_comp_code = match comp {
-                            "0" => "0101010",
-                            "1" => "0111111",
-                            "-1" => "0111010",
-                            "D" => "0001100",
-                            "A" => "0110000",
-                            "M" => "1110000",
-                            "!D" => "0001101",
-                            "!A" => "0110001",
-                            "!M" => "1110001",
-                            "-D" => "0001111",
-                            "-A" => "0110011",
-                            "-M" => "1110011",
-                            "D+1" => "0011111",
-                            "A+1" => "0110111",
-                            "M+1" => "1110111",
-                            "D-1" => "0001110",
-                            "A-1" => "0110010",
-                            "M-1" => "1110010",
-                            "D+A" => "0000010",
-                            "D+M" => "1000010",
-                            "D-A" => "0010011",
-                            "D-M" => "1010011",
-                            "A-D" => "0000111",
-                            "M-D" => "1000111",
-                            "D&A" => "0000000",
-                            "D&M" => "1000000",
-                            "D|A" => "0010101",
-                            "D|M" => "1010101",
-                            _ => bail!("invalid computation '{}'", comp),
-                        };
-                        let jump_code = match jump {
-                            "" => "000",
-                            "JGT" => "001",
-                            "JEQ" => "010",
-                            "JGE" => "011",
-                            "JLT" => "100",
-                            "JNE" => "101",
-                            "JLE" => "110",
-                            "JMP" => "111",
-                            _ => bail!("invalid jump '{}'", jump),
-                        };
+                        c.inc_word(word::Q, [pos::VU, pos::VL])?
+                            .is_nonzero(word::Q, pos::FU, [pos::VU, pos::VL])?
+                            .if_else_move(
+                                pos::FU,
+                                pos::FL,
+                                |c| {
+                                    c.dec_word(word::Q, [pos::VU, pos::VL])?
+                                        .is_zero(word::Q, pos::FU, [pos::VU, pos::VL])?
+                                        .if_move(pos::FU, |c| {
+                                            match comp {
+                                                "0" => {
+                                                    c.set_word(word::R, 0)?;
+                                                }
+                                                "1" => {
+                                                    c.set_word(word::R, 1)?;
+                                                }
+                                                "-1" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?
+                                                        .seek(pos::RU)?
+                                                        .dec_val()?
+                                                        .seek(pos::RL)?
+                                                        .dec_val()?;
+                                                }
+                                                "D" => {
+                                                    c.copy_word(word::D, &[word::R], pos::VU)?;
+                                                }
+                                                "A" => {
+                                                    c.copy_word(word::A, &[word::R], pos::VU)?;
+                                                }
+                                                "M" => {
+                                                    c.copy_word(word::M, &[word::R], pos::VU)?;
+                                                }
+                                                "-D" => {
+                                                    c.sub_word(
+                                                        word::D,
+                                                        word::R,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "-A" => {
+                                                    c.sub_word(
+                                                        word::A,
+                                                        word::R,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "-M" => {
+                                                    c.sub_word(
+                                                        word::M,
+                                                        word::R,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                        ],
+                                                    )?;
+                                                }
+                                                _ => unreachable!(
+                                                    "unsupported comp specification '{}'",
+                                                    comp
+                                                ),
+                                            }
 
-                        todo!("C instruction")
+                                            let dest_words: Vec<_> = chain!(
+                                                dest.contains('A').then_some(word::A),
+                                                dest.contains('D').then_some(word::D),
+                                                dest.contains('M').then_some(word::M),
+                                            )
+                                            .collect();
+                                            c.clear_cell(
+                                                &dest_words
+                                                    .iter()
+                                                    .flat_map(|&(u, l)| [u, l])
+                                                    .collect_vec(),
+                                            )?
+                                            .copy_word(word::R, &dest_words, pos::VU)?;
+
+                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(11)?.write("#")
+                                        })
+                                },
+                                |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
+                            )?;
                     }
                     Rule::label_definition => {}
                     Rule::EOI => {
