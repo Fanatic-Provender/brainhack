@@ -110,6 +110,10 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                     c.dec_word(word::Q, [pos::VU, pos::VL])?
                                         .is_zero(word::Q, pos::FU, [pos::VU, pos::VL])?
                                         .if_move(pos::FU, |c| {
+                                            if comp.contains('M') {
+                                                c.clear_cell(&[pos::MU, pos::ML])?.read_memory()?;
+                                            }
+
                                             match comp {
                                                 "0" => {
                                                     c.set_word(word::R, 0)?;
@@ -312,7 +316,13 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                             )?
                                             .copy_word(word::R, &dest_words, pos::VU)?;
 
-                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(11)?.write("#")
+                                            if dest.contains('M') {
+                                                c.write_memory()?;
+                                            }
+
+                                            // TODO: jumps
+
+                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("#")
                                         })
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),

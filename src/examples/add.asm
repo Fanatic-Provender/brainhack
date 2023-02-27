@@ -1,38 +1,18 @@
-// This file is part of www.nand2tetris.org
-// and the book "The Elements of Computing Systems"
-// by Nisan and Schocken, MIT Press.
-// File name: projects/06/add/Add.asm
+// M[1] = 31
+// M[2] = 32
+// M[0] = M[1] + M[2]
 
-// Computes R0 = 2 + 3  (R0 refers to RAM[0])
-
-@2
+@31
 D=A
-@3
-D=D+A
+@1
+M=D
+@32
+D=A
+@2
+M=D
+@1
+D=M
+@2
+D=D+M
 @0
 M=D
-
-// P = 0;
-// while P != -1 {
-//     R = P;
-//
-//     for line in lines {
-//         R += 1;
-//         if R != 0 {
-//             R -= 1;
-//             if R == 0 {
-//                 line
-//             }
-//         } else {
-//             R -= 1;
-//         }
-//         R -= 1;
-//     }
-//
-//     if R == 0 {
-//         P = -1;
-//     } else {
-//         R = 0;
-//         P += 1;
-//     }
-// }
