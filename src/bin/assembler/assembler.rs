@@ -320,7 +320,15 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                 c.write_memory()?;
                                             }
 
-                                            // TODO: jumps
+                                            match jump {
+                                                "" => {}
+                                                "JMP" => {
+                                                    c.clear_cell(&[pos::PU, pos::PL])?
+                                                        .copy_word(word::A, &[word::P], pos::VU)?
+                                                        .dec_word(word::P, [pos::VU, pos::VL])?;
+                                                }
+                                                _ => todo!(""),
+                                            }
 
                                             c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("#")
                                         })
