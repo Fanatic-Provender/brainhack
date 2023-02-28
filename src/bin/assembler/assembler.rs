@@ -440,7 +440,7 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                 _ => unreachable!(),
                                             }
 
-                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("!")
+                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("#")
                                         })
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
