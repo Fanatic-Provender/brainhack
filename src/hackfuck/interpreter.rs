@@ -8,39 +8,35 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::Sdl;
 // use std::time::Duration;
+use std::marker::PhantomData;
 
-pub struct Interpreter {
+pub struct IO;
+pub struct PURE;
+
+pub struct Interpreter<Type> {
     pub tape: Tape,
     instructions: Vec<Instruction>,
-    sdl_context: Sdl,
-    canvas: Canvas<Window>,
+    sdl_context: Option<Sdl>,
+    canvas: Option<Canvas<Window>>,
+    type_: PhantomData<Type>
 }
 
-impl Interpreter {
-    pub fn new(instructions: Vec<Instruction>) -> Interpreter {
-        let sdl_context = sdl2::init().unwrap();
-
-        let window = sdl_context
-            .video()
-            .unwrap()
-            .window("BrainHack", 512, 256)
-            .position_centered()
-            .build()
-            .unwrap();
-
-        let canvas = window.into_canvas().build().unwrap();
-
-        Interpreter {
-            tape: Tape::new(),
-            instructions,
-            sdl_context,
-            canvas,
-        }
-    }
-
+impl<Type> Interpreter<Type> {
     #[allow(dead_code)]
     pub fn load(&mut self, instructions: Vec<Instruction>) {
         self.instructions = instructions;
+    }
+}
+
+impl Interpreter<PURE> {
+    pub fn new(instructions: Vec<Instruction>) -> Interpreter<PURE> {
+        Interpreter::<PURE> {
+            tape: Tape::new(),
+            instructions,
+            sdl_context: None,
+            canvas: None,
+            type_: PhantomData::<PURE>
+        }
     }
 
     #[allow(dead_code)]
@@ -62,16 +58,40 @@ impl Interpreter {
                         i = index
                     }
                 }
-                Instruction::BreakPoint => self.tape.breakpoint()
+                Instruction::BreakPoint => self.tape.breakpoint(),
             }
             i += 1;
         }
         Ok(())
     }
 
+    pub fn init_screen(self) -> Interpreter<IO> {
+        let sdl_context = sdl2::init().unwrap();
+
+        let window = sdl_context
+            .video()
+            .unwrap()
+            .window("BrainHack", 512, 256)
+            .position_centered()
+            .build()
+            .unwrap();
+
+        let canvas = window.into_canvas().build().unwrap();
+
+        Interpreter::<IO> { 
+            tape: self.tape, 
+            instructions: self.instructions, 
+            sdl_context: Some(sdl_context), 
+            canvas: Some(canvas), 
+            type_: PhantomData::<IO> 
+        }
+    }
+}
+
+impl Interpreter<IO> {
     pub fn run(&mut self) -> Result<()> {
         let mut i = 0;
-        let mut event_pump = self.sdl_context.event_pump().unwrap();
+        let mut event_pump = self.sdl_context.as_mut().unwrap().event_pump().unwrap();
         'event_loop: while i < self.instructions.len() {
             for event in event_pump.poll_iter() {
                 match event {
@@ -80,13 +100,14 @@ impl Interpreter {
                     _ => {}
                 }
             }
-            self.canvas.set_draw_color(Color::RGB(255, 255, 255));
-            self.canvas.clear();
-            self.canvas.set_draw_color(Color::RGB(0, 0, 0));
+            let canvas = self.canvas.as_mut().unwrap();
+            canvas.set_draw_color(Color::RGB(255, 255, 255));
+            canvas.clear();
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
 
             let points = self.tape.get_pixels();
-            self.canvas.draw_points(points.as_slice()).unwrap();
-            self.canvas.present();
+            canvas.draw_points(points.as_slice()).ok();
+            canvas.present();
             // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60)); // sloppy FPS limit
 
             match self.instructions[i] {
@@ -112,6 +133,7 @@ impl Interpreter {
     }
 }
 
+
 #[cfg(test)]
 mod interpreter_test {
     use super::*;
@@ -136,7 +158,7 @@ mod interpreter_test {
         // |  1  |  6  | 255 |  0  |  0  |  0  |  0  |  248  |  0  |  4  |  3  |  0  |  0  |  0  |  255  |  6  |
 
         let mut interpreter =
-            Interpreter::new(Parser::from_bytes(program).unwrap().optimized_parse());
+            Interpreter::new(Parser::from_bytes(program).unwrap().optimized_parse(true));
 
         interpreter.eval().unwrap();
 
