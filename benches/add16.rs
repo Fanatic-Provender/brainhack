@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use brainhack::interpreter::{Parser, Interpreter};
+use brainhack::hackfuck::{Parser, Interpreter};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("16 Bit Add", 

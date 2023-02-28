@@ -115,7 +115,7 @@ impl Interpreter {
 #[cfg(test)]
 mod interpreter_test {
     use super::*;
-    use crate::interpreter::parser::Parser;
+    use crate::hackfuck::parser::Parser;
 
     #[test]
     fn test_optimizations() {
