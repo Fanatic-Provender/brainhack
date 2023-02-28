@@ -1,8 +1,8 @@
 use super::instruction::Instruction;
 use anyhow::{Error, Result};
 
-use std::collections::{HashMap, VecDeque};
 use std::cmp::Ordering;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::fs::File;
 use std::io::Read;
@@ -61,12 +61,13 @@ impl Parser {
     }
 
     #[allow(dead_code)]
-    pub fn optimized_parse(mut self) -> Vec<Instruction> {
+    pub fn optimized_parse(mut self, debug: bool) -> Vec<Instruction> {
         self.batch_optimization();
-        self.redundancy_optimization();
-        // println!("\n{:?}", self.instructions);
-        self.direct_cell_mod_optimization();
-        // println!("\n{:?}", self.instructions);
+        // self.redundancy_optimization();
+        println!("\n{:?}", self.instructions);
+        self.order_optimization(debug);
+        // self.direct_cell_mod_optimization();
+        println!("\n{:?}", self.instructions);
         self.fix_loops().ok();
         // println!("\n{:?}", self.instructions);
         self.instructions
@@ -107,7 +108,11 @@ impl Parser {
                 prev = instruction;
             } else if instruction == prev {
                 batch += 1;
-                new_instructions.last_mut().unwrap().update_batch(batch).ok();
+                new_instructions
+                    .last_mut()
+                    .unwrap()
+                    .update_batch(batch)
+                    .ok();
             } else {
                 new_instructions.push(instruction);
                 prev = instruction;
@@ -270,9 +275,49 @@ impl Parser {
     }
 
     #[allow(dead_code)]
-    fn order_optimization(&mut self) {
+    fn order_optimization(&mut self, debug: bool) {
+        // SHOULD BE PERFORMED BEFORE ANY OTHER OFFSETS ARE CREATED
+
         // change execution order to increase batching
-        todo!()
+        let mut offset = 0;
+        // Every time a memory operation is encountered this will be adjusted
+        // instead of actually doing the mem operation to improve runtime performance
+        let mut new_instructions = vec![];
+
+        for instruction in &self.instructions {
+            match instruction {
+                Instruction::IncPtr(batch) => offset += *batch as isize,
+                Instruction::DecPtr(batch) => offset -= *batch as isize,
+                Instruction::IncCell(batch, _) => {
+                    new_instructions.push(Instruction::IncCell(*batch, offset))
+                }
+                Instruction::DecCell(batch, _) => {
+                    new_instructions.push(Instruction::DecCell(*batch, offset))
+                }
+                Instruction::StartLoop(_) | Instruction::EndLoop(_) => {
+                    if offset < 0 {
+                        new_instructions.push(Instruction::DecPtr(offset.unsigned_abs()))
+                    } else if offset > 0 {
+                        new_instructions.push(Instruction::IncPtr(offset.unsigned_abs()))
+                    }
+                    new_instructions.push(*instruction);
+                    offset = 0;
+                }
+                Instruction::BreakPoint => {
+                    if debug {
+                        if offset < 0 {
+                            new_instructions.push(Instruction::DecPtr(offset.unsigned_abs()))
+                        } else if offset > 0 {
+                            new_instructions.push(Instruction::IncPtr(offset.unsigned_abs()))
+                        }
+                        new_instructions.push(*instruction);
+                        offset = 0;
+                    }
+                }
+            }
+        }
+
+        self.instructions = new_instructions;
     }
 
     #[allow(dead_code)]
@@ -288,4 +333,3 @@ impl Parser {
         todo!()
     }
 }
-
