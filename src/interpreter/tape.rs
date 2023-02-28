@@ -29,7 +29,7 @@ use super::consts::*;
 use super::utils::{cell_to_bin, pause};
 
 use anyhow::{bail, Result};
-use sdl2::keyboard::{Keycode, Scancode};
+use sdl2::keyboard::Keycode;
 use sdl2::rect::Point;
 
 pub struct Tape {
@@ -118,6 +118,41 @@ impl Tape {
             self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN + 1]
         );
         eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+\n");
+
+        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+ ");
+        eprintln!("|  S0 |  S1 |  G0 |  S2 |  S3 |  G1 |  S4 |  S5 |  G2 |  S6 |  S7 |  G3 |  S8 |  S9 |  G4 | S10 | S11 |  G5 | S12 | S13 |  G6 | S14 | S15 |  G7 | S16 | S17 |  G8 |");
+        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+");
+        eprintln!(
+            "| {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} |", 
+            self.mem_buffer[26],
+            self.mem_buffer[27],
+            self.mem_buffer[28],
+            self.mem_buffer[29],
+            self.mem_buffer[30],
+            self.mem_buffer[31],
+            self.mem_buffer[32],
+            self.mem_buffer[33],
+            self.mem_buffer[34],
+            self.mem_buffer[35],
+            self.mem_buffer[36],
+            self.mem_buffer[37],
+            self.mem_buffer[38],
+            self.mem_buffer[39],
+            self.mem_buffer[40],
+            self.mem_buffer[41],
+            self.mem_buffer[42],
+            self.mem_buffer[43],
+            self.mem_buffer[44],
+            self.mem_buffer[45],
+            self.mem_buffer[46],
+            self.mem_buffer[47],
+            self.mem_buffer[48],
+            self.mem_buffer[49],
+            self.mem_buffer[50],
+            self.mem_buffer[51],
+            self.mem_buffer[52],
+        );
+        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+\n");
 
         eprintln!("+----------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+");
         eprintln!("| Register |    A    |    D    |    M    |    P    |    Q    |    R    |    F    |    V    |    W    |   KBD   |");
