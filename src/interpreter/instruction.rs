@@ -10,7 +10,7 @@ pub enum Instruction {
     StartLoop(usize),      // (Index of matching EndLoop)
     EndLoop(usize),        // (Index of matching StartLoop)
     // Custom instruction for debugging
-    BreakPoint, 
+    BreakPoint,
 }
 
 impl Instruction {
@@ -20,7 +20,7 @@ impl Instruction {
     /// * `batch_size` - Number of instructions being batched
     /// 
     /// # Returns
-    /// Returns Err if batch of un-groupable instructions is updated
+    /// Returns Err if instructions can't be grouped
     /// 
     pub(super) fn update_batch(&mut self, batch_size: usize) -> Result<()> {
         match self {
@@ -69,20 +69,12 @@ impl Instruction {
 
     /// Determine if instruction operates on cell
     pub(super) fn cell_op(&self) -> bool {
-        if let &Instruction::IncCell(_, _) | &Instruction::DecCell(_, _) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, &Instruction::IncCell(_, _) | &Instruction::DecCell(_, _))
     }
 
     /// Determine if instruction operates on memory
     pub(super) fn mem_op(&self) -> bool {
-        if let &Instruction::IncPtr(_) | &Instruction::DecPtr(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, &Instruction::IncPtr(_) | &Instruction::DecPtr(_))
     }
 }
 

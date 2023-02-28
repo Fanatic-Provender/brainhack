@@ -16,7 +16,7 @@ impl Parser {
         let mut f = File::open(&file_path)?;
         let metadata = fs::metadata(&file_path)?;
         let mut buffer = vec![0; metadata.len() as usize];
-        f.read(&mut buffer)?;
+        f.read_exact(&mut buffer)?;
         Self::from_bytes(buffer.as_slice())
     }
 
@@ -54,18 +54,20 @@ impl Parser {
         })
     }
 
+    #[allow(dead_code)]
     pub fn parse(mut self) -> Vec<Instruction> {
-        self.fix_loops();
+        self.fix_loops().ok();
         self.instructions
     }
 
+    #[allow(dead_code)]
     pub fn optimized_parse(mut self) -> Vec<Instruction> {
         self.batch_optimization();
         self.redundancy_optimization();
         // println!("\n{:?}", self.instructions);
         self.direct_cell_mod_optimization();
         // println!("\n{:?}", self.instructions);
-        self.fix_loops();
+        self.fix_loops().ok();
         // println!("\n{:?}", self.instructions);
         self.instructions
     }
@@ -105,7 +107,7 @@ impl Parser {
                 prev = instruction;
             } else if instruction == prev {
                 batch += 1;
-                new_instructions.last_mut().unwrap().update_batch(batch);
+                new_instructions.last_mut().unwrap().update_batch(batch).ok();
             } else {
                 new_instructions.push(instruction);
                 prev = instruction;
@@ -163,11 +165,11 @@ impl Parser {
                     i += 1;
                     match batch1.cmp(&batch2) {
                         Ordering::Less => {
-                            inst2.update_batch(batch2 - batch1);
+                            inst2.update_batch(batch2 - batch1).ok();
                             new_instructions.push(inst2);
                         }
                         Ordering::Greater => {
-                            inst1.update_batch(batch1 - batch2);
+                            inst1.update_batch(batch1 - batch2).ok();
                             new_instructions.push(inst1);
                         }
                         Ordering::Equal => {} // THe instructions cancel out
@@ -192,11 +194,11 @@ impl Parser {
                 match batch1.cmp(&batch2) {
                     Ordering::Less => {
                         #[allow(unused_must_use)]
-                        inst2.update_batch(batch2 - batch1);
+                        inst2.update_batch(batch2 - batch1).ok();
                         new_instructions.push(inst2);
                     }
                     Ordering::Greater => {
-                        inst1.update_batch(batch1 - batch2);
+                        inst1.update_batch(batch1 - batch2).ok();
                         new_instructions.push(inst1);
                     }
                     Ordering::Equal => {} // THe instructions cancel out
@@ -237,7 +239,7 @@ impl Parser {
 
             match (inst1, inst2.cell_op(), inst3) {
                 (Instruction::IncPtr(bl), true, Instruction::DecPtr(br)) => {
-                    inst2.update_offset(bl as isize);
+                    inst2.update_offset(bl as isize).ok();
                     new_instructions.push(inst2);
                     match bl.cmp(&br) {
                         Ordering::Greater => new_instructions.push(Instruction::IncPtr(bl - br)),
@@ -246,7 +248,7 @@ impl Parser {
                     }
                 }
                 (Instruction::DecPtr(bl), true, Instruction::IncPtr(br)) => {
-                    inst2.update_offset(-(bl as isize));
+                    inst2.update_offset(-(bl as isize)).ok();
                     new_instructions.push(inst2);
                     match bl.cmp(&br) {
                         Ordering::Greater => new_instructions.push(Instruction::DecPtr(bl - br)),
@@ -267,38 +269,23 @@ impl Parser {
         self.instructions = new_instructions
     }
 
+    #[allow(dead_code)]
     fn order_optimization(&mut self) {
         // change execution order to increase batching
         todo!()
     }
 
+    #[allow(dead_code)]
     fn bounded_loop_optimization(&mut self) {
         // Inline bounded loops and turn them into batched cell instructions
         // To do this modification will need to be made for
         todo!()
     }
 
+    #[allow(dead_code)]
     fn dead_code_optimization(&mut self) {
         // Removes consecutive open and closed brackets
         todo!()
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn matching_test() {
-        let inst1 = Instruction::DecPtr(10);
-        let mut inst2 = Instruction::IncCell(5, 0);
-        let inst3 = Instruction::IncPtr(5);
-        if let (Instruction::DecPtr(bl), Instruction::IncCell(b, _), Instruction::IncPtr(br)) =
-            (inst1, inst2, inst3)
-        {
-            eprintln!("Found case");
-            inst2.update_offset(-(bl as isize));
-            println!("{inst2:?}");
-        }
-    }
-}

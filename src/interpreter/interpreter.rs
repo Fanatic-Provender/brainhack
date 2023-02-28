@@ -7,7 +7,7 @@ use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::Sdl;
-use std::time::Duration;
+// use std::time::Duration;
 
 pub struct Interpreter {
     pub tape: Tape,
@@ -28,7 +28,7 @@ impl Interpreter {
             .build()
             .unwrap();
 
-        let mut canvas = window.into_canvas().build().unwrap();
+        let canvas = window.into_canvas().build().unwrap();
 
         Interpreter {
             tape: Tape::new(),
@@ -38,10 +38,12 @@ impl Interpreter {
         }
     }
 
+    #[allow(dead_code)]
     pub fn load(&mut self, instructions: Vec<Instruction>) {
         self.instructions = instructions;
     }
 
+    #[allow(dead_code)]
     pub fn eval(&mut self) -> Result<()> {
         let mut i = 0;
         while i < self.instructions.len() {
@@ -51,16 +53,16 @@ impl Interpreter {
                 Instruction::IncCell(batch, offset) => self.tape.inc_cell(batch, offset)?,
                 Instruction::DecCell(batch, offset) => self.tape.dec_cell(batch, offset)?,
                 Instruction::StartLoop(index) => {
-                    if self.tape.get_current_cell() == 0 {
+                    if self.tape.get_cell() == 0 {
                         i = index
                     }
                 }
                 Instruction::EndLoop(index) => {
-                    if self.tape.get_current_cell() != 0 {
+                    if self.tape.get_cell() != 0 {
                         i = index
                     }
                 }
-                Instruction::BreakPoint => self.tape.breakpoint(),
+                Instruction::BreakPoint => self.tape.breakpoint()
             }
             i += 1;
         }
@@ -93,12 +95,12 @@ impl Interpreter {
                 Instruction::IncCell(batch, offset) => self.tape.inc_cell(batch, offset)?,
                 Instruction::DecCell(batch, offset) => self.tape.dec_cell(batch, offset)?,
                 Instruction::StartLoop(index) => {
-                    if self.tape.get_current_cell() == 0 {
+                    if self.tape.get_cell() == 0 {
                         i = index
                     }
                 }
                 Instruction::EndLoop(index) => {
-                    if self.tape.get_current_cell() != 0 {
+                    if self.tape.get_cell() != 0 {
                         i = index
                     }
                 }
@@ -111,9 +113,9 @@ impl Interpreter {
 }
 
 #[cfg(test)]
-mod InterpreterTests {
+mod interpreter_test {
     use super::*;
-    use crate::interpreter::{instruction, parser::Parser};
+    use crate::interpreter::parser::Parser;
 
     #[test]
     fn test_optimizations() {

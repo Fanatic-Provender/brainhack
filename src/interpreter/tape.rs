@@ -48,7 +48,7 @@ impl Tape {
         }
 
         self.mem_buffer[(self.mem_ptr as isize + mem_ptr_offset) as usize] = self.mem_buffer
-            [(self.mem_ptr as isize + mem_ptr_offset as isize) as usize]
+            [(self.mem_ptr as isize + mem_ptr_offset) as usize]
             .wrapping_sub(batch_size as u8);
         Ok(())
     }
@@ -150,30 +150,19 @@ impl Tape {
 
 impl Tape {
     pub fn new() -> Self {
-        Self {
-            mem_ptr: 0,
-            mem_buffer: [0; TAPE_SIZE],
-        }
+        Self::default()
     }
-
-    pub fn get_current_cell(&self) -> u8 {
+    
+    pub fn get_cell(&self) -> u8 {
         self.mem_buffer[self.mem_ptr]
     }
 
-    pub fn get_cell(&self, index: usize) -> Option<u8> {
-        self.mem_buffer.get(index).copied()
-    }
-
+    #[allow(dead_code)]
     pub fn get_slice(&self, start: usize, end: usize) -> Option<&[u8]> {
         if start > end || end > TAPE_SIZE {
             return None;
         }
         Some(&self.mem_buffer[start..=end])
-    }
-
-    pub fn clear(&mut self) {
-        self.mem_ptr = 0;
-        self.mem_buffer = [0; TAPE_SIZE];
     }
 
     pub fn update_kbd(&mut self, keycode: Keycode) {
@@ -311,5 +300,14 @@ impl Tape {
         }
 
         pixels
+    }
+}
+
+impl Default for Tape {
+    fn default() -> Self {
+        Self {
+            mem_ptr: 0,
+            mem_buffer: [0; TAPE_SIZE],
+        }
     }
 }
