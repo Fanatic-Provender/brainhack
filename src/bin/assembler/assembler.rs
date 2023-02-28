@@ -327,10 +327,120 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                         .copy_word(word::A, &[word::P], pos::VU)?
                                                         .dec_word(word::P, [pos::VU, pos::VL])?;
                                                 }
-                                                _ => todo!(""),
+                                                "JEQ" => {
+                                                    c.is_zero(
+                                                        word::R,
+                                                        pos::FU,
+                                                        [pos::VU, pos::VL],
+                                                    )?
+                                                    .if_move(pos::FU, |c| {
+                                                        c.clear_cell(&[pos::PU, pos::PL])?
+                                                            .copy_word(
+                                                                word::A,
+                                                                &[word::P],
+                                                                pos::VU,
+                                                            )?
+                                                            .dec_word(word::P, [pos::VU, pos::VL])
+                                                    })?;
+                                                }
+                                                "JNE" => {
+                                                    c.is_nonzero(
+                                                        word::R,
+                                                        pos::FU,
+                                                        [pos::VU, pos::VL],
+                                                    )?
+                                                    .if_move(pos::FU, |c| {
+                                                        c.clear_cell(&[pos::PU, pos::PL])?
+                                                            .copy_word(
+                                                                word::A,
+                                                                &[word::P],
+                                                                pos::VU,
+                                                            )?
+                                                            .dec_word(word::P, [pos::VU, pos::VL])
+                                                    })?;
+                                                }
+                                                "JLT" => {
+                                                    c.is_lt_zero(
+                                                        word::R,
+                                                        pos::FU,
+                                                        [pos::VU, pos::VL, pos::WU, pos::WL],
+                                                    )?
+                                                    .if_move(pos::FU, |c| {
+                                                        c.clear_cell(&[pos::PU, pos::PL])?
+                                                            .copy_word(
+                                                                word::A,
+                                                                &[word::P],
+                                                                pos::VU,
+                                                            )?
+                                                            .dec_word(word::P, [pos::VU, pos::VL])
+                                                    })?;
+                                                }
+                                                "JGT" => {
+                                                    c.is_gt_zero(
+                                                        word::R,
+                                                        pos::FU,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                            pos::T8,
+                                                        ],
+                                                    )?
+                                                    .if_move(pos::FU, |c| {
+                                                        c.clear_cell(&[pos::PU, pos::PL])?
+                                                            .copy_word(
+                                                                word::A,
+                                                                &[word::P],
+                                                                pos::VU,
+                                                            )?
+                                                            .dec_word(word::P, [pos::VU, pos::VL])
+                                                    })?;
+                                                }
+                                                "JLE" => {
+                                                    c.is_le_zero(
+                                                        word::R,
+                                                        pos::FU,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                            pos::T8,
+                                                        ],
+                                                    )?
+                                                    .if_move(pos::FU, |c| {
+                                                        c.clear_cell(&[pos::PU, pos::PL])?
+                                                            .copy_word(
+                                                                word::A,
+                                                                &[word::P],
+                                                                pos::VU,
+                                                            )?
+                                                            .dec_word(word::P, [pos::VU, pos::VL])
+                                                    })?;
+                                                }
+                                                "JGE" => {
+                                                    c.is_ge_zero(
+                                                        word::R,
+                                                        pos::FU,
+                                                        [pos::VU, pos::VL, pos::WU, pos::WL],
+                                                    )?
+                                                    .if_move(pos::FU, |c| {
+                                                        c.clear_cell(&[pos::PU, pos::PL])?
+                                                            .copy_word(
+                                                                word::A,
+                                                                &[word::P],
+                                                                pos::VU,
+                                                            )?
+                                                            .dec_word(word::P, [pos::VU, pos::VL])
+                                                    })?;
+                                                }
+                                                _ => unreachable!(),
                                             }
 
-                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("#")
+                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("!")
                                         })
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
