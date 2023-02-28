@@ -1,10 +1,7 @@
 use super::instruction::Instruction;
 use anyhow::{Error, Result};
-use std::{
-    collections::{HashMap, VecDeque},
-    hash,
-};
 
+use std::collections::{HashMap, VecDeque};
 use std::cmp::Ordering;
 use std::fs;
 use std::fs::File;
@@ -15,7 +12,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn from_file(file_path: &String) -> Result<Self> {
+    pub fn from_file(file_path: String) -> Result<Self> {
         let mut f = File::open(&file_path)?;
         let metadata = fs::metadata(&file_path)?;
         let mut buffer = vec![0; metadata.len() as usize];
@@ -251,7 +248,7 @@ impl Parser {
                 (Instruction::DecPtr(bl), true, Instruction::IncPtr(br)) => {
                     inst2.update_offset(-(bl as isize));
                     new_instructions.push(inst2);
-                    match br.cmp(&bl) {
+                    match bl.cmp(&br) {
                         Ordering::Greater => new_instructions.push(Instruction::DecPtr(bl - br)),
                         Ordering::Less => new_instructions.push(Instruction::IncPtr(br - bl)),
                         Ordering::Equal => {} // No additional mem operations necessary
