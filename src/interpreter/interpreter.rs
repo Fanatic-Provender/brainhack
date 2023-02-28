@@ -1,11 +1,9 @@
-use super::instruction::{self, Instruction};
+use super::instruction::Instruction;
 use super::tape::Tape;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::Sdl;
@@ -67,24 +65,6 @@ impl Interpreter {
             i += 1;
         }
         Ok(())
-    }
-
-    fn io_operations(&mut self) {
-        let mut event_pump = self.sdl_context.event_pump().unwrap();
-        'running: loop {
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. } => break 'running,
-                    Event::KeyDown { keycode, .. } => {}
-                    _ => {}
-                }
-            }
-
-            let points = [Point::new(0, 0); 256];
-            self.canvas.draw_points(points.as_slice()).unwrap();
-            self.canvas.present();
-            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60)); // sloppy FPS limit
-        }
     }
 
     pub fn run(&mut self) -> Result<()> {

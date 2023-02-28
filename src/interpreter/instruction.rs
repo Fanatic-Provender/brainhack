@@ -1,29 +1,27 @@
 use anyhow::{bail, Result};
 
+/// Data structure to represent abstract brainfuck operations
 #[derive(Debug, Copy, Clone)]
 pub enum Instruction {
-    IncPtr(usize),         // Batch size
-    DecPtr(usize),         // Batch size
-    IncCell(usize, isize), // Batch size, mem_ptr offset
-    DecCell(usize, isize), // Batch size, mem_ptr offset
-    StartLoop(usize),      // Index of matching EndLoop
-    EndLoop(usize),        // Index of matching StartLoop
-    BreakPoint,
+    IncPtr(usize),         // (Batch size)
+    DecPtr(usize),         // (Batch size)
+    IncCell(usize, isize), // (Batch size, mem_ptr offset)
+    DecCell(usize, isize), // (Batch size, mem_ptr offset)
+    StartLoop(usize),      // (Index of matching EndLoop)
+    EndLoop(usize),        // (Index of matching StartLoop)
+    // Custom instruction for debugging
+    BreakPoint, 
 }
 
 impl Instruction {
-    pub fn to_byte(self) -> u8 {
-        match self {
-            Instruction::IncPtr(_) => b'>',
-            Instruction::DecPtr(_) => b'<',
-            Instruction::IncCell(_, _) => b'+',
-            Instruction::DecCell(_, _) => b'-',
-            Instruction::StartLoop(_) => b'[',
-            Instruction::EndLoop(_) => b']',
-            Instruction::BreakPoint => b'#',
-        }
-    }
-
+    /// Updates Instruction batch
+    /// 
+    /// # Arguments
+    /// * `batch_size` - Number of instructions being batched
+    /// 
+    /// # Returns
+    /// Returns Err if batch of un-groupable instructions is updated
+    /// 
     pub(super) fn update_batch(&mut self, batch_size: usize) -> Result<()> {
         match self {
             Instruction::IncPtr(batch) => *batch = batch_size,
@@ -35,6 +33,14 @@ impl Instruction {
         Ok(())
     }
 
+    /// Updates Instruction offset, changes which relative cell the instruction operates on
+    /// 
+    /// # Arguments
+    /// * `offset` - Offset from current mem pointer
+    /// 
+    /// # Returns
+    /// Returns Err if instruction doesn't operate on the cell value
+    /// 
     pub(super) fn update_offset(&mut self, offset: isize) -> Result<()> {
         match self {
             Instruction::IncCell(_, mem_ptr_offset) => *mem_ptr_offset = offset,
@@ -44,6 +50,14 @@ impl Instruction {
         Ok(())
     }
 
+    /// Updates Jump index for loops
+    /// 
+    /// # Arguments
+    /// * `index` - index of loop pair in instruction vector
+    /// 
+    /// # Returns
+    /// Returns Err if instruction isn't a loop
+    /// 
     pub(super) fn update_loop(&mut self, index: usize) -> Result<()> {
         match self {
             Instruction::StartLoop(i) => *i = index,
@@ -53,6 +67,7 @@ impl Instruction {
         Ok(())
     }
 
+    /// Determine if instruction operates on cell
     pub(super) fn cell_op(&self) -> bool {
         if let &Instruction::IncCell(_, _) | &Instruction::DecCell(_, _) = self {
             true
@@ -61,6 +76,7 @@ impl Instruction {
         }
     }
 
+    /// Determine if instruction operates on memory
     pub(super) fn mem_op(&self) -> bool {
         if let &Instruction::IncPtr(_) | &Instruction::DecPtr(_) = self {
             true
