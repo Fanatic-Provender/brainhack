@@ -11,3 +11,11 @@ sdl2 = "0.35.2"
 [[bench]]
 name = "add16"
 harness = false
+
+
+[lib]
+doctest = false
+
+[[bin]]
+name = "brainhack"
+test = false

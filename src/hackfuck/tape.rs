@@ -152,7 +152,7 @@ impl Tape {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     pub fn get_cell(&self) -> u8 {
         self.mem_buffer[self.mem_ptr]
     }

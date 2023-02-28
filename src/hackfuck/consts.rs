@@ -4,7 +4,6 @@
 // 8192 Screen Words   | 24576
 // 1 Kbd Word          | 3
 
-
 /// Number of cells allocated to the named in the brainfuck memory-cell buffer
 pub const REGISTER_BUFFER: usize = 27;
 

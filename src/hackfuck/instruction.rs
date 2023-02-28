@@ -15,13 +15,13 @@ pub enum Instruction {
 
 impl Instruction {
     /// Updates Instruction batch
-    /// 
+    ///
     /// # Arguments
     /// * `batch_size` - Number of instructions being batched
-    /// 
+    ///
     /// # Returns
     /// Returns Err if instructions can't be grouped
-    /// 
+    ///
     pub(super) fn update_batch(&mut self, batch_size: usize) -> Result<()> {
         match self {
             Instruction::IncPtr(batch) => *batch = batch_size,
@@ -34,13 +34,13 @@ impl Instruction {
     }
 
     /// Updates Instruction offset, changes which relative cell the instruction operates on
-    /// 
+    ///
     /// # Arguments
     /// * `offset` - Offset from current mem pointer
-    /// 
+    ///
     /// # Returns
     /// Returns Err if instruction doesn't operate on the cell value
-    /// 
+    ///
     pub(super) fn update_offset(&mut self, offset: isize) -> Result<()> {
         match self {
             Instruction::IncCell(_, mem_ptr_offset) => *mem_ptr_offset = offset,
@@ -51,13 +51,13 @@ impl Instruction {
     }
 
     /// Updates Jump index for loops
-    /// 
+    ///
     /// # Arguments
     /// * `index` - index of loop pair in instruction vector
-    /// 
+    ///
     /// # Returns
     /// Returns Err if instruction isn't a loop
-    /// 
+    ///
     pub(super) fn update_loop(&mut self, index: usize) -> Result<()> {
         match self {
             Instruction::StartLoop(i) => *i = index,
@@ -69,7 +69,10 @@ impl Instruction {
 
     /// Determine if instruction operates on cell
     pub(super) fn cell_op(&self) -> bool {
-        matches!(self, &Instruction::IncCell(_, _) | &Instruction::DecCell(_, _))
+        matches!(
+            self,
+            &Instruction::IncCell(_, _) | &Instruction::DecCell(_, _)
+        )
     }
 
     /// Determine if instruction operates on memory
