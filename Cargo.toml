@@ -5,4 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.69"
+criterion = "0.4.0"
 sdl2 = "0.35.2"
+
+[[bench]]
+name = "add16"
+harness = false
