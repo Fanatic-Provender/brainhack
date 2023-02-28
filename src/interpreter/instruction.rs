@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 
-#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Instruction {
     IncPtr(usize),         // Batch size
     DecPtr(usize),         // Batch size
@@ -67,5 +67,31 @@ impl Instruction {
         } else {
             false
         }
+    }
+}
+
+impl PartialEq for Instruction {
+    /// This equality check does not consider instruction batches
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            // Pointer operations are always equal
+            (Self::IncPtr(_), Self::IncPtr(_)) | (Self::DecPtr(_), Self::DecPtr(_)) => true,
+            // Mem cell operations are equal if they are working on the same mem cell
+            (Self::IncCell(_, l1), Self::IncCell(_, r1)) => l1 == r1,
+            (Self::DecCell(_, l1), Self::DecCell(_, r1)) => l1 == r1,
+            _ => false, // Loops and breakpoints should never be equal
+        }
+    }
+}
+
+#[cfg(test)]
+mod instruction_tests {
+    use super::*;
+
+    #[test]
+    fn test_eq() {
+        let inst1 = Instruction::IncCell(1, 0);
+        let inst2 = Instruction::IncCell(1, 0);
+        assert!(inst1 == inst2)
     }
 }

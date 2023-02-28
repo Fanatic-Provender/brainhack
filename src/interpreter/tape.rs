@@ -6,7 +6,7 @@ In ASM              | In BrainFuck
 8192 Screen Words   | 24576
 1 Kbd Word          | 3
 
-  0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  
+  0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17
 +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
 | A | A | T | D | D | T | M | M | T | R | R | T | F | T | T | T | T | T |
 +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
@@ -25,16 +25,12 @@ In ASM              | In BrainFuck
 
 */
 
+use super::consts::*;
+use super::utils::{cell_to_bin, pause};
 
-use super::utils::{pause, };
 use anyhow::{bail, Result};
-use std::io::Read;
-
-pub const REGISTER_BUFFER: usize = 19;
-pub const SCREEN: usize = 24576;
-pub const RAM: usize = 49152;
-pub const KBD: usize = 3;
-pub const TAPE_SIZE: usize = REGISTER_BUFFER + RAM + SCREEN + KBD;
+use sdl2::keyboard::{Keycode, Scancode};
+use sdl2::rect::Point;
 
 pub struct Tape {
     mem_ptr: usize,
@@ -85,6 +81,7 @@ impl Tape {
     }
 
     pub fn breakpoint(&self) {
+        // TODO: Update the mem layout, add additional registers
         eprintln!("\n\n+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+");
         eprintln!("|  T0 |  Au |  Al |  T1 |  Du |  Dl |  T2 |  Mu |  Ml |  T3 |  Ru |  Rl |  T4 |  Pu |  Pl |  T5 |  F  |  T6 |  T7 |     | KBD | KBD |");
         eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+ ... +-----+-----+");
@@ -116,11 +113,20 @@ impl Tape {
         eprintln!("+----------+-------+");
         eprintln!("| Register | Value |");
         eprintln!("+----------+-------+");
-        eprintln!("|     A    |{: ^7}|", 256*self.mem_buffer[1] as u32 + self.mem_buffer[2] as u32);
+        eprintln!(
+            "|     A    |{: ^7}|",
+            256 * self.mem_buffer[1] as u32 + self.mem_buffer[2] as u32
+        );
         eprintln!("+----------+-------+");
-        eprintln!("|     D    |{: ^7}|", 256*self.mem_buffer[4] as u32 + self.mem_buffer[5] as u32);
+        eprintln!(
+            "|     D    |{: ^7}|",
+            256 * self.mem_buffer[4] as u32 + self.mem_buffer[5] as u32
+        );
         eprintln!("+----------+-------+");
-        eprintln!("|     M    |{: ^7}|", 256*self.mem_buffer[7] as u32 + self.mem_buffer[8] as u32);
+        eprintln!(
+            "|     M    |{: ^7}|",
+            256 * self.mem_buffer[7] as u32 + self.mem_buffer[8] as u32
+        );
         eprintln!("+----------+-------+");
         eprintln!("|    KBD   |{: ^7}|", "TBA"); // TODO: replace with Pressed key representation
         eprintln!("+----------+-------+");
@@ -154,5 +160,142 @@ impl Tape {
     pub fn clear(&mut self) {
         self.mem_ptr = 0;
         self.mem_buffer = [0; TAPE_SIZE];
+    }
+
+    pub fn update_kbd(&mut self, keycode: Keycode) {
+        let key_val: u8 = match keycode {
+            Keycode::Backspace => 129,
+            Keycode::Return => 128,
+            Keycode::Escape => 140,
+            Keycode::Space => 32,
+            Keycode::Exclaim => 33,
+            Keycode::Quotedbl => 34,
+            Keycode::Hash => 35,
+            Keycode::Dollar => 36,
+            Keycode::Percent => 37,
+            Keycode::Ampersand => 38,
+            Keycode::Quote => 39,
+            Keycode::LeftParen => 40,
+            Keycode::RightParen => 41,
+            Keycode::Asterisk => 42,
+            Keycode::Plus => 43,
+            Keycode::Comma => 44,
+            Keycode::Minus => 45,
+            Keycode::Period => 46,
+            Keycode::Slash => 47,
+            Keycode::Num0 => 48,
+            Keycode::Num1 => 49,
+            Keycode::Num2 => 50,
+            Keycode::Num3 => 51,
+            Keycode::Num4 => 52,
+            Keycode::Num5 => 53,
+            Keycode::Num6 => 54,
+            Keycode::Num7 => 55,
+            Keycode::Num8 => 56,
+            Keycode::Num9 => 57,
+            Keycode::Colon => 58,
+            Keycode::Semicolon => 59,
+            Keycode::Less => 60,
+            Keycode::Equals => 61,
+            Keycode::Greater => 62,
+            Keycode::Question => 63,
+            Keycode::At => 64,
+            Keycode::LeftBracket => 91,
+            Keycode::Backslash => 92,
+            Keycode::RightBracket => 93,
+            Keycode::Caret => 94,
+            Keycode::Underscore => 95,
+            Keycode::Backquote => 96,
+            Keycode::A => 65,
+            Keycode::B => 66,
+            Keycode::C => 67,
+            Keycode::D => 68,
+            Keycode::E => 69,
+            Keycode::F => 70,
+            Keycode::G => 71,
+            Keycode::H => 72,
+            Keycode::I => 73,
+            Keycode::J => 74,
+            Keycode::K => 75,
+            Keycode::L => 76,
+            Keycode::M => 77,
+            Keycode::N => 78,
+            Keycode::O => 79,
+            Keycode::P => 80,
+            Keycode::Q => 81,
+            Keycode::R => 82,
+            Keycode::S => 83,
+            Keycode::T => 84,
+            Keycode::U => 85,
+            Keycode::V => 86,
+            Keycode::W => 87,
+            Keycode::X => 88,
+            Keycode::Y => 89,
+            Keycode::Z => 90,
+            Keycode::Delete => 127,
+            Keycode::F1 => 141,
+            Keycode::F2 => 142,
+            Keycode::F3 => 143,
+            Keycode::F4 => 144,
+            Keycode::F5 => 145,
+            Keycode::F6 => 146,
+            Keycode::F7 => 147,
+            Keycode::F8 => 148,
+            Keycode::F9 => 149,
+            Keycode::F10 => 150,
+            Keycode::F11 => 151,
+            Keycode::F12 => 152,
+            Keycode::Insert => 138,
+            Keycode::Home => 134,
+            Keycode::PageUp => 136,
+            Keycode::End => 135,
+            Keycode::PageDown => 137,
+            Keycode::Right => 132,
+            Keycode::Left => 130,
+            Keycode::Down => 133,
+            Keycode::Up => 131,
+            // Keycode::LCtrl => todo!(),
+            // Keycode::LShift => todo!(),
+            // Keycode::LAlt => todo!(),
+            // Keycode::RCtrl => todo!(),
+            // Keycode::RShift => todo!(),
+            // Keycode::RAlt => todo!(),
+            _ => 0,
+        };
+
+        self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN + 1] = key_val
+    }
+
+    pub fn get_pixels(&mut self) -> Vec<Point> {
+        let mut pixels = vec![];
+
+        let mut x = 0;
+        let mut y = 0;
+
+        for chunks in
+            self.mem_buffer[(REGISTER_BUFFER + RAM)..(REGISTER_BUFFER + RAM + SCREEN)].chunks(3)
+        {
+            let (w1, w2) = (chunks[0], chunks[1]);
+
+            for bit in cell_to_bin(w1) {
+                if bit {
+                    pixels.push(Point::new(x, y))
+                }
+                x += 1;
+            }
+            for bit in cell_to_bin(w2) {
+                if bit {
+                    pixels.push(Point::new(x, y))
+                }
+                x += 1;
+            }
+
+            if x % 512 == 0 {
+                y += 1;
+                x = 0;
+            }
+        }
+
+        pixels
     }
 }

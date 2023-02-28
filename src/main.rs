@@ -1,8 +1,7 @@
 mod interpreter;
-use interpreter::{pause, Interpreter, Parser};
 
-fn main() {
-    let program = b"+>++++*++>->>>>>-------->>++++<<>++++++++[-]>>+++++-->>>>>><<-";
-    let mut interpreter = Interpreter::new(Parser::from_bytes(program).unwrap().parse());
-    interpreter.run();
+fn main() { 
+    let program = interpreter::Parser::from_bytes(b"++++[->++<]*").unwrap().optimized_parse();
+    let mut interpreter = interpreter::Interpreter::new(program);
+    interpreter.eval().unwrap();
 }
