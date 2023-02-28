@@ -82,11 +82,11 @@ impl Tape {
 
     pub fn breakpoint(&self) {
         // TODO: Update the mem layout, add additional registers
-        eprintln!("\n\n+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+");
-        eprintln!("|  T0 |  Au |  Al |  T1 |  Du |  Dl |  T2 |  Mu |  Ml |  T3 |  Ru |  Rl |  T4 |  Pu |  Pl |  T5 |  F  |  T6 |  T7 |     | KBD | KBD |");
-        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+ ... +-----+-----+");
+        eprintln!("\n\n+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+");
+        eprintln!("|  Au |  Al |  T0 |  Du |  Dl |  T1 |  Mu |  Ml |  T2 |  Pu |  Pl |  T3 |  Qu |  Ql |  T4 |  Ru |  Rl |  T5 |  Fu |  Fl |  T6 |  Vu |  Vl |  T7 |  Wu |  Wl |  T8 |     | KBD | KBD |");
+        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+ ... +-----+-----+");
         eprintln!(
-            "| {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} |     | {: ^3} | {: ^3} |", 
+            "| {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} | {: ^3} |     | {: ^3} | {: ^3} |", 
             self.mem_buffer[0],
             self.mem_buffer[1],
             self.mem_buffer[2],
@@ -106,30 +106,36 @@ impl Tape {
             self.mem_buffer[16],
             self.mem_buffer[17],
             self.mem_buffer[18],
+            self.mem_buffer[19],
+            self.mem_buffer[20],
+            self.mem_buffer[21],
+            self.mem_buffer[22],
+            self.mem_buffer[23],
+            self.mem_buffer[24],
+            self.mem_buffer[25],
+            self.mem_buffer[26],
             self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN],
             self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN + 1]
         );
-        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+\n");
-        eprintln!("+----------+-------+");
-        eprintln!("| Register | Value |");
-        eprintln!("+----------+-------+");
-        eprintln!(
-            "|     A    |{: ^7}|",
-            256 * self.mem_buffer[1] as u32 + self.mem_buffer[2] as u32
+        eprintln!("+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+\n");
+
+
+        eprintln!("+----------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+");
+        eprintln!("| Register |    A    |    D    |    M    |    P    |    Q    |    R    |    F    |    V    |    W    |   KBD   |");
+        eprintln!("+----------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+");
+        eprintln!("|  Value   |{: ^9}|{: ^9}|{: ^9}|{: ^9}|{: ^9}|{: ^9}|{: ^9}|{: ^9}|{: ^9}|{: ^9}|", 
+            256 * self.mem_buffer[0] as u32 + self.mem_buffer[1] as u32, 
+            256 * self.mem_buffer[3] as u32 + self.mem_buffer[4] as u32,
+            256 * self.mem_buffer[6] as u32 + self.mem_buffer[7] as u32,
+            256 * self.mem_buffer[9] as u32 + self.mem_buffer[10] as u32,
+            256 * self.mem_buffer[12] as u32 + self.mem_buffer[13] as u32,
+            256 * self.mem_buffer[15] as u32 + self.mem_buffer[16] as u32,
+            256 * self.mem_buffer[18] as u32 + self.mem_buffer[19] as u32,
+            256 * self.mem_buffer[21] as u32 + self.mem_buffer[22] as u32,
+            256 * self.mem_buffer[24] as u32 + self.mem_buffer[25] as u32,
+            "n/a"
         );
-        eprintln!("+----------+-------+");
-        eprintln!(
-            "|     D    |{: ^7}|",
-            256 * self.mem_buffer[4] as u32 + self.mem_buffer[5] as u32
-        );
-        eprintln!("+----------+-------+");
-        eprintln!(
-            "|     M    |{: ^7}|",
-            256 * self.mem_buffer[7] as u32 + self.mem_buffer[8] as u32
-        );
-        eprintln!("+----------+-------+");
-        eprintln!("|    KBD   |{: ^7}|", "TBA"); // TODO: replace with Pressed key representation
-        eprintln!("+----------+-------+");
+        eprintln!("+----------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+");
         pause()
     }
 }

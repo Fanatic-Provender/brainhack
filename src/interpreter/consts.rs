@@ -1,4 +1,4 @@
-pub const REGISTER_BUFFER: usize = 19;
+pub const REGISTER_BUFFER: usize = 27;
 pub const SCREEN: usize = 24576;
 pub const RAM: usize = 49152;
 pub const KBD: usize = 3;
