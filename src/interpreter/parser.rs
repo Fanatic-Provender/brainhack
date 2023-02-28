@@ -43,7 +43,7 @@ impl Parser {
                     loop_map.insert(start, parsed_instructions.len());
                     parsed_instructions.push(Instruction::EndLoop(usize::MAX));
                 }
-                b'*' => parsed_instructions.push(Instruction::BreakPoint),
+                b'#' => parsed_instructions.push(Instruction::BreakPoint),
                 _ => {}
             }
         }

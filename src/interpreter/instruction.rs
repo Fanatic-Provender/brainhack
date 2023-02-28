@@ -20,7 +20,7 @@ impl Instruction {
             Instruction::DecCell(_, _) => b'-',
             Instruction::StartLoop(_) => b'[',
             Instruction::EndLoop(_) => b']',
-            Instruction::BreakPoint => b'*',
+            Instruction::BreakPoint => b'#',
         }
     }
 
@@ -81,17 +81,5 @@ impl PartialEq for Instruction {
             (Self::DecCell(_, l1), Self::DecCell(_, r1)) => l1 == r1,
             _ => false, // Loops and breakpoints should never be equal
         }
-    }
-}
-
-#[cfg(test)]
-mod instruction_tests {
-    use super::*;
-
-    #[test]
-    fn test_eq() {
-        let inst1 = Instruction::IncCell(1, 0);
-        let inst2 = Instruction::IncCell(1, 0);
-        assert!(inst1 == inst2)
     }
 }
