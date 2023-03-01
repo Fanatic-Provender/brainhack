@@ -3,11 +3,11 @@
 // by Nisan and Schocken, MIT Press.
 // File name: projects/06/max/Max.asm
 
-   @38
+   @42
    D=A
    @R0
    M=D
-   @42
+   @38
    D=A
    @R1
    M=D

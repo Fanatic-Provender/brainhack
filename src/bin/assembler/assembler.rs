@@ -85,7 +85,8 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                         })
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
-                            )?;
+                            )?
+                            .dec_word(word::Q, [pos::VU, pos::VL])?;
                     }
                     Rule::c_instruction => {
                         let mut dest = "";
@@ -444,7 +445,8 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                         })
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
-                            )?;
+                            )?
+                            .dec_word(word::Q, [pos::VU, pos::VL])?;
                     }
                     Rule::label_definition => {}
                     Rule::EOI => {
@@ -463,8 +465,6 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                     }
                     _ => unreachable!(),
                 }
-
-                c.dec_word(word::Q, [pos::VU, pos::VL])?;
             }
 
             unreachable!()
