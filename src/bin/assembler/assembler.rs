@@ -1,3 +1,5 @@
+use brainhack::traits::binary::Binary;
+
 use {
     crate::parser::{HackPair, Rule},
     anyhow::{anyhow, bail},
@@ -166,6 +168,45 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                 }
                                                 "-M" => {
                                                     c.sub_word(
+                                                        word::M,
+                                                        word::R,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "!D" => {
+                                                    c.binary_not(
+                                                        word::D,
+                                                        word::R,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "!A" => {
+                                                    c.binary_not(
+                                                        word::A,
+                                                        word::R,
+                                                        [
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "!M" => {
+                                                    c.binary_not(
                                                         word::M,
                                                         word::R,
                                                         [
