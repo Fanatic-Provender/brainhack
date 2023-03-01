@@ -6,13 +6,14 @@ use std::cmp::Ordering;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 
 pub struct Parser {
     instructions: Vec<Instruction>,
 }
 
 impl Parser {
-    pub fn from_file(file_path: String) -> Result<Self> {
+    pub fn from_file(file_path: &Path) -> Result<Self> {
         let mut f = File::open(&file_path)?;
         let metadata = fs::metadata(&file_path)?;
         let mut buffer = vec![0; metadata.len() as usize];
