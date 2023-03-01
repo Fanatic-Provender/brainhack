@@ -1,5 +1,5 @@
 pub mod coder;
-pub mod interpreter;
+pub mod hackfuck;
 pub mod traits;
 
 #[cfg(test)]
