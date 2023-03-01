@@ -1,4 +1,5 @@
 pub mod arith;
+pub mod binary;
 pub mod branch;
 pub mod core;
 pub mod logic;
