@@ -1,4 +1,5 @@
 pub mod coder;
+pub mod interpreter;
 pub mod traits;
 
 #[cfg(test)]
