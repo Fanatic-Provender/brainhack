@@ -129,6 +129,44 @@ pub trait Binary: Arith {
         }
         self.clear_cell(&[mul])
     }
+    fn binary_or_cell(
+        &mut self,
+        a: Pos,
+        b: Pos,
+        dest: Pos,
+        temp: [Pos; 9],
+    ) -> anyhow::Result<&mut Self> {
+        self.copy_cell(a, &[temp[0]], temp[2])?
+            .copy_cell(b, &[temp[1]], temp[3])?
+            .binary_or_cell_move(
+                temp[0],
+                temp[1],
+                dest,
+                [
+                    temp[2], temp[3], temp[4], temp[5], temp[6], temp[7], temp[8],
+                ],
+            )
+    }
+    fn binary_or_move(
+        &mut self,
+        a: Word,
+        b: Word,
+        dest: Word,
+        temp: [Pos; 7],
+    ) -> anyhow::Result<&mut Self> {
+        self.binary_or_cell_move(a.0, b.0, dest.0, temp)?
+            .binary_or_cell_move(a.1, b.1, dest.1, temp)
+    }
+    fn binary_or(
+        &mut self,
+        a: Word,
+        b: Word,
+        dest: Word,
+        temp: [Pos; 9],
+    ) -> anyhow::Result<&mut Self> {
+        self.binary_or_cell(a.0, b.0, dest.0, temp)?
+            .binary_or_cell(a.1, b.1, dest.1, temp)
+    }
 }
 impl<T: Arith> Binary for T {}
 
@@ -368,6 +406,95 @@ mod tests {
             &[215, 148],
             0,
             &[0, 0, 215 | 148, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn binary_or_cell() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .binary_or_cell(0, 1, 2, [3, 4, 5, 6, 7, 8, 9, 10, 11])?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[0, 0],
+            0,
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[0, 42],
+            0,
+            &[0, 42, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[31, 41],
+            0,
+            &[31, 41, 31 | 41, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[215, 148],
+            0,
+            &[215, 148, 215 | 148, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn binary_or_move() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .binary_or_move((0, 1), (2, 3), (4, 5), [6, 7, 8, 9, 10, 11, 12])?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[0, 0, 0, 0],
+            0,
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[31, 41, 59, 26],
+            0,
+            &[0, 0, 0, 0, 31 | 59, 41 | 26, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn binary_or() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .binary_or((0, 1), (2, 3), (4, 5), [6, 7, 8, 9, 10, 11, 12, 13, 14])?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[0, 0, 0, 0],
+            0,
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[31, 41, 59, 26],
+            0,
+            &[31, 41, 59, 26, 31 | 59, 41 | 26, 0, 0, 0, 0, 0, 0, 0, 0],
             0,
         );
 
