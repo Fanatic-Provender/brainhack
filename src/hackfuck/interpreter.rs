@@ -7,7 +7,6 @@ use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::Sdl;
-// use std::time::Duration;
 use std::marker::PhantomData;
 
 pub struct IO;
@@ -18,25 +17,13 @@ pub struct Interpreter<Type> {
     instructions: Vec<Instruction>,
     sdl_context: Option<Sdl>,
     canvas: Option<Canvas<Window>>,
-    type_: PhantomData<Type>
+    type_: PhantomData<Type>,
 }
 
 impl<Type> Interpreter<Type> {
     #[allow(dead_code)]
     pub fn load(&mut self, instructions: Vec<Instruction>) {
         self.instructions = instructions;
-    }
-}
-
-impl Interpreter<PURE> {
-    pub fn new(instructions: Vec<Instruction>) -> Interpreter<PURE> {
-        Interpreter::<PURE> {
-            tape: Tape::new(),
-            instructions,
-            sdl_context: None,
-            canvas: None,
-            type_: PhantomData::<PURE>
-        }
     }
 
     #[allow(dead_code)]
@@ -62,7 +49,23 @@ impl Interpreter<PURE> {
             }
             i += 1;
         }
+
+        println!("{:?}", self.tape.get_pixels());
+        self.tape.breakpoint();
+
         Ok(())
+    }
+}
+
+impl Interpreter<PURE> {
+    pub fn new(instructions: Vec<Instruction>) -> Interpreter<PURE> {
+        Interpreter::<PURE> {
+            tape: Tape::new(),
+            instructions,
+            sdl_context: None,
+            canvas: None,
+            type_: PhantomData::<PURE>,
+        }
     }
 
     pub fn init_screen(self) -> Interpreter<IO> {
@@ -78,12 +81,12 @@ impl Interpreter<PURE> {
 
         let canvas = window.into_canvas().build().unwrap();
 
-        Interpreter::<IO> { 
-            tape: self.tape, 
-            instructions: self.instructions, 
-            sdl_context: Some(sdl_context), 
-            canvas: Some(canvas), 
-            type_: PhantomData::<IO> 
+        Interpreter::<IO> {
+            tape: self.tape,
+            instructions: self.instructions,
+            sdl_context: Some(sdl_context),
+            canvas: Some(canvas),
+            type_: PhantomData::<IO>,
         }
     }
 }
@@ -91,24 +94,38 @@ impl Interpreter<PURE> {
 impl Interpreter<IO> {
     pub fn run(&mut self) -> Result<()> {
         let mut i = 0;
+        let mut writes = 1;
         let mut event_pump = self.sdl_context.as_mut().unwrap().event_pump().unwrap();
-        'event_loop: while i < self.instructions.len() {
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. } => break 'event_loop,
-                    Event::KeyDown { keycode, .. } => self.tape.update_kbd(keycode.unwrap()),
-                    _ => {}
-                }
+        let canvas = self.canvas.as_mut().unwrap();
+        'event_loop: loop {
+            if i >= self.instructions.len() {
+                break 'event_loop;
             }
-            let canvas = self.canvas.as_mut().unwrap();
-            canvas.set_draw_color(Color::RGB(255, 255, 255));
-            canvas.clear();
-            canvas.set_draw_color(Color::RGB(0, 0, 0));
 
-            let points = self.tape.get_pixels();
-            canvas.draw_points(points.as_slice()).ok();
-            canvas.present();
-            // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60)); // sloppy FPS limit
+            if self.tape.io_write {
+                writes += 1;
+                self.tape.io_write = false;
+            }
+
+            if writes % 100000 == 0 {
+                canvas.set_draw_color(Color::RGB(255, 255, 255));
+                canvas.clear();
+                canvas.set_draw_color(Color::RGB(0, 0, 0));
+
+                let points = self.tape.get_pixels();
+                canvas.draw_points(points.as_slice()).unwrap();
+                canvas.present();
+                // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60)); // sloppy FPS limit
+
+                for event in event_pump.poll_iter() {
+                    match event {
+                        Event::Quit { .. } => break 'event_loop,
+                        Event::KeyDown { keycode, .. } => self.tape.update_kbd(keycode.unwrap()),
+                        _ => {}
+                    }
+                }
+                writes = 1;
+            }
 
             match self.instructions[i] {
                 Instruction::IncPtr(batch) => self.tape.inc_ptr(batch)?,
@@ -129,10 +146,10 @@ impl Interpreter<IO> {
             }
             i += 1;
         }
+
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod interpreter_test {
