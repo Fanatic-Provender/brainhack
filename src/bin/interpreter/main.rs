@@ -13,6 +13,6 @@ fn main() {
     let program = Parser::from_file(source_path)
         .unwrap()
         .optimized_parse(true);
-    let mut interpreter = Interpreter::new(program);
-    interpreter.eval().unwrap();
+    let mut interpreter = Interpreter::new(program).init_screen();
+    interpreter.run().unwrap();
 }
