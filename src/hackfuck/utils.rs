@@ -1,5 +1,6 @@
 use std::io::{stdin, stdout, Read, Write};
 
+/// Pause the program until the user presses Enter.
 pub fn pause() {
     let mut stdout = stdout();
     stdout.write_all(b"Press Enter to Resume Program").unwrap();
@@ -7,6 +8,7 @@ pub fn pause() {
     stdin().read_exact(&mut [0]).unwrap();
 }
 
+/// Convert a byte to an array of 8 boolean values.
 pub fn cell_to_bin(mut cell: u8) -> [bool; 8] {
     let mut bits = [false; 8];
 

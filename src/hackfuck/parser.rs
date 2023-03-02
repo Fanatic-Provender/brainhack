@@ -13,6 +13,7 @@ pub struct Parser {
 }
 
 impl Parser {
+    /// Create a new parser from a file
     pub fn from_file(file_path: &Path) -> Result<Self> {
         let mut f = File::open(&file_path)?;
         let metadata = fs::metadata(&file_path)?;
@@ -21,6 +22,7 @@ impl Parser {
         Self::from_bytes(buffer.as_slice())
     }
 
+    /// Create a new parser from a byte array
     pub fn from_bytes(instructions: &[u8]) -> Result<Self> {
         let mut parsed_instructions: Vec<Instruction> = vec![];
         let mut loop_stack = VecDeque::new();
@@ -55,25 +57,28 @@ impl Parser {
         })
     }
 
+    /// 1 to 1 execution of loaded program
     #[allow(dead_code)]
     pub fn parse(mut self) -> Vec<Instruction> {
-        self.fix_loops().ok();
+        self.fix_loops().unwrap();
         self.instructions
     }
 
+    /// Performs a series of optimizations on the loaded program
     #[allow(dead_code)]
     pub fn optimized_parse(mut self, debug: bool) -> Vec<Instruction> {
         self.batch_optimization();
-        // self.redundancy_optimization();
-        println!("\n{:?}", self.instructions);
         self.order_optimization(debug);
+        self.redundancy_optimization();
+        self.batch_optimization();
         // self.direct_cell_mod_optimization();
-        println!("\n{:?}", self.instructions);
-        self.fix_loops().ok();
-        // println!("\n{:?}", self.instructions);
+        self.fix_loops().unwrap();
+        // self.bounded_loop_optimization();
+        // self.fix_loops().unwrap();
         self.instructions
     }
 
+    /// Pairs StartLoop and EndLoop instructions
     fn fix_loops(&mut self) -> Result<()> {
         let mut loop_stack = VecDeque::new();
         let mut loop_map = HashMap::new();
@@ -94,6 +99,7 @@ impl Parser {
         Ok(())
     }
 
+    /// Combines consecutive instructions of the same type
     fn batch_optimization(&mut self) {
         let mut prev = Instruction::StartLoop(0);
         let mut batch = 1;
@@ -113,7 +119,7 @@ impl Parser {
                     .last_mut()
                     .unwrap()
                     .update_batch(batch)
-                    .ok();
+                    .unwrap();
             } else {
                 new_instructions.push(instruction);
                 prev = instruction;
@@ -123,6 +129,7 @@ impl Parser {
         self.instructions = new_instructions;
     }
 
+    /// Combines consecutive instructions of contradictory purpose
     fn redundancy_optimization(&mut self) {
         // Goes through and checks if consecutive instructions contradict, can be done multiple times
 
@@ -171,11 +178,11 @@ impl Parser {
                     i += 1;
                     match batch1.cmp(&batch2) {
                         Ordering::Less => {
-                            inst2.update_batch(batch2 - batch1).ok();
+                            inst2.update_batch(batch2 - batch1).unwrap();
                             new_instructions.push(inst2);
                         }
                         Ordering::Greater => {
-                            inst1.update_batch(batch1 - batch2).ok();
+                            inst1.update_batch(batch1 - batch2).unwrap();
                             new_instructions.push(inst1);
                         }
                         Ordering::Equal => {} // THe instructions cancel out
@@ -200,11 +207,11 @@ impl Parser {
                 match batch1.cmp(&batch2) {
                     Ordering::Less => {
                         #[allow(unused_must_use)]
-                        inst2.update_batch(batch2 - batch1).ok();
+                        inst2.update_batch(batch2 - batch1).unwrap();
                         new_instructions.push(inst2);
                     }
                     Ordering::Greater => {
-                        inst1.update_batch(batch1 - batch2).ok();
+                        inst1.update_batch(batch1 - batch2).unwrap();
                         new_instructions.push(inst1);
                     }
                     Ordering::Equal => {} // THe instructions cancel out
@@ -221,61 +228,7 @@ impl Parser {
         self.instructions = new_instructions
     }
 
-    fn direct_cell_mod_optimization(&mut self) {
-        let mut new_instructions = vec![];
-
-        let mut i = 0;
-        while i < self.instructions.len() {
-            let inst1 = self.instructions[i];
-            let mut inst2 = match self.instructions.get(i + 1) {
-                Some(&inst) => inst,
-                None => {
-                    new_instructions.push(inst1);
-                    break;
-                }
-            };
-            let inst3 = match self.instructions.get(i + 2) {
-                Some(&inst) => inst,
-                None => {
-                    new_instructions.push(inst1);
-                    new_instructions.push(inst2);
-                    break;
-                }
-            };
-
-            match (inst1, inst2.cell_op(), inst3) {
-                (Instruction::IncPtr(bl), true, Instruction::DecPtr(br)) => {
-                    inst2.update_offset(bl as isize).ok();
-                    new_instructions.push(inst2);
-                    match bl.cmp(&br) {
-                        Ordering::Greater => new_instructions.push(Instruction::IncPtr(bl - br)),
-                        Ordering::Less => new_instructions.push(Instruction::DecPtr(br - bl)),
-                        Ordering::Equal => {} // No additional mem operations necessary
-                    }
-                }
-                (Instruction::DecPtr(bl), true, Instruction::IncPtr(br)) => {
-                    inst2.update_offset(-(bl as isize)).ok();
-                    new_instructions.push(inst2);
-                    match bl.cmp(&br) {
-                        Ordering::Greater => new_instructions.push(Instruction::DecPtr(bl - br)),
-                        Ordering::Less => new_instructions.push(Instruction::IncPtr(br - bl)),
-                        Ordering::Equal => {} // No additional mem operations necessary
-                    }
-                }
-                _ => {
-                    new_instructions.push(inst1);
-                    i += 1; // Does not match pattern, move on to next triplet
-                    continue;
-                }
-            }
-
-            i += 3; // Matched pattern, instructions minimized
-        }
-
-        self.instructions = new_instructions
-    }
-
-    #[allow(dead_code)]
+    /// Order instructions to decrease the number of times the pointer is moved
     fn order_optimization(&mut self, debug: bool) {
         // SHOULD BE PERFORMED BEFORE ANY OTHER OFFSETS ARE CREATED
 
@@ -321,16 +274,68 @@ impl Parser {
         self.instructions = new_instructions;
     }
 
+
+    /// Predecessor to order optimization
     #[allow(dead_code)]
-    fn bounded_loop_optimization(&mut self) {
-        // Inline bounded loops and turn them into batched cell instructions
-        // To do this modification will need to be made for
-        todo!()
+    fn direct_cell_mod_optimization(&mut self) {
+        let mut new_instructions = vec![];
+
+        let mut i = 0;
+        while i < self.instructions.len() {
+            let inst1 = self.instructions[i];
+            let mut inst2 = match self.instructions.get(i + 1) {
+                Some(&inst) => inst,
+                None => {
+                    new_instructions.push(inst1);
+                    break;
+                }
+            };
+            let inst3 = match self.instructions.get(i + 2) {
+                Some(&inst) => inst,
+                None => {
+                    new_instructions.push(inst1);
+                    new_instructions.push(inst2);
+                    break;
+                }
+            };
+
+            match (inst1, inst2.cell_op(), inst3) {
+                (Instruction::IncPtr(bl), true, Instruction::DecPtr(br)) => {
+                    inst2.update_offset(bl as isize).unwrap();
+                    new_instructions.push(inst2);
+                    match bl.cmp(&br) {
+                        Ordering::Greater => new_instructions.push(Instruction::IncPtr(bl - br)),
+                        Ordering::Less => new_instructions.push(Instruction::DecPtr(br - bl)),
+                        Ordering::Equal => {} // No additional mem operations necessary
+                    }
+                }
+                (Instruction::DecPtr(bl), true, Instruction::IncPtr(br)) => {
+                    inst2.update_offset(-(bl as isize)).unwrap();
+                    new_instructions.push(inst2);
+                    match bl.cmp(&br) {
+                        Ordering::Greater => new_instructions.push(Instruction::DecPtr(bl - br)),
+                        Ordering::Less => new_instructions.push(Instruction::IncPtr(br - bl)),
+                        Ordering::Equal => {} // No additional mem operations necessary
+                    }
+                }
+                _ => {
+                    new_instructions.push(inst1);
+                    i += 1; // Does not match pattern, move on to next triplet
+                    continue;
+                }
+            }
+
+            i += 3; // Matched pattern, instructions minimized
+        }
+
+        self.instructions = new_instructions
     }
 
+    /// Inline bounded loops and turn them into batched cell instructions
+    /// To do this modification will need to be made for the Instruction enum
+    /// currently not implemented
     #[allow(dead_code)]
-    fn dead_code_optimization(&mut self) {
-        // Removes consecutive open and closed brackets
+    fn bounded_loop_optimization(&mut self) {
         todo!()
     }
 }

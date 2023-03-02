@@ -5,28 +5,54 @@ use anyhow::{bail, Result};
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Point;
 
+/// Data structure to represent brainfuck memory tape
 pub struct Tape {
-    mem_ptr: usize,
-    mem_buffer: [u8; TAPE_SIZE],
+    pub io_write: bool,             // Flag indicating if most recent instruction updated screen
+    mem_ptr: usize,                 // Memory pointer
+    mem_buffer: [u8; TAPE_SIZE],    // Memory buffer
 }
 
 impl Tape {
+    /// Increments Tape
+    /// 
+    /// # Arguments
+    /// * `batch` - Number of cells move
+    /// 
+    /// # Returns
+    /// Returns Err if memory pointer overflows
     pub fn inc_ptr(&mut self, batch: usize) -> Result<()> {
         if self.mem_ptr + batch > TAPE_SIZE {
             bail!("Memory pointer overflow")
         }
+        
         self.mem_ptr += batch;
         Ok(())
     }
 
+    /// Decrements Tape
+    /// 
+    /// # Arguments
+    /// * `batch` - Number of cells move
+    /// 
+    /// # Returns
+    /// Returns Err if memory pointer underflows
     pub fn dec_ptr(&mut self, batch: usize) -> Result<()> {
         if (self.mem_ptr as isize - batch as isize) < 0 {
             bail!("Memory pointer underflow")
         }
+
         self.mem_ptr -= batch;
         Ok(())
     }
 
+    /// Increments cell value
+    /// 
+    /// # Arguments
+    /// * `batch_size` - Value to increment cell by
+    /// * `mem_ptr_offset` - Offset from current memory cell
+    /// 
+    /// # Returns
+    /// Returns Err if memory pointer overflows
     pub fn inc_cell(&mut self, batch_size: usize, mem_ptr_offset: isize) -> Result<()> {
         if (self.mem_ptr as isize + mem_ptr_offset) < 0
             || (self.mem_ptr as isize + mem_ptr_offset) > TAPE_SIZE as isize
@@ -34,12 +60,22 @@ impl Tape {
             bail!("Memory pointer out of bounds")
         }
 
+        self.io_write = (self.mem_ptr as isize + mem_ptr_offset) as usize >= REGISTER_BUFFER + RAM;
+
         self.mem_buffer[(self.mem_ptr as isize + mem_ptr_offset) as usize] = self.mem_buffer
             [(self.mem_ptr as isize + mem_ptr_offset) as usize]
             .wrapping_add(batch_size as u8);
         Ok(())
     }
 
+    /// Decrements cell value
+    /// 
+    /// # Arguments
+    /// * `batch_size` - Value to decrement cell by
+    /// * `mem_ptr_offset` - Offset from current memory cell
+    /// 
+    /// # Returns
+    /// Returns Err if memory pointer overflows
     pub fn dec_cell(&mut self, batch_size: usize, mem_ptr_offset: isize) -> Result<()> {
         if (self.mem_ptr as isize + mem_ptr_offset) < 0
             || (self.mem_ptr as isize + mem_ptr_offset) > TAPE_SIZE as isize
@@ -47,12 +83,15 @@ impl Tape {
             bail!("Memory pointer out of bounds")
         }
 
+        self.io_write = (self.mem_ptr as isize + mem_ptr_offset) as usize >= REGISTER_BUFFER + RAM;
+
         self.mem_buffer[(self.mem_ptr as isize + mem_ptr_offset) as usize] = self.mem_buffer
             [(self.mem_ptr as isize + mem_ptr_offset) as usize]
             .wrapping_sub(batch_size as u8);
         Ok(())
     }
 
+    /// Pauses program execution and prints debug interface
     pub fn breakpoint(&self) {
         // TODO: Update the mem layout, add additional registers
         eprintln!("\n\n+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+     +-----+-----+");
@@ -148,15 +187,19 @@ impl Tape {
     }
 }
 
+
 impl Tape {
+    /// Creates a new tape
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Returns the current cell value
     pub fn get_cell(&self) -> u8 {
         self.mem_buffer[self.mem_ptr]
     }
 
+    /// Returns segment of memory buffer
     #[allow(dead_code)]
     pub fn get_slice(&self, start: usize, end: usize) -> Option<&[u8]> {
         if start > end || end > TAPE_SIZE {
@@ -165,6 +208,7 @@ impl Tape {
         Some(&self.mem_buffer[start..=end])
     }
 
+    /// Updates KBD using SDL2 keycodes
     pub fn update_kbd(&mut self, keycode: Keycode) {
         let key_val: u8 = match keycode {
             Keycode::Backspace => 129,
@@ -269,6 +313,7 @@ impl Tape {
         self.mem_buffer[REGISTER_BUFFER + RAM + SCREEN + 1] = key_val
     }
 
+    /// Creates vector of pixels to be drawn based of the screen buffer
     pub fn get_pixels(&mut self) -> Vec<Point> {
         let mut pixels = vec![];
 
@@ -304,10 +349,88 @@ impl Tape {
 }
 
 impl Default for Tape {
+    /// Default values for a tape
     fn default() -> Self {
         Self {
+            io_write: false,
             mem_ptr: 0,
             mem_buffer: [0; TAPE_SIZE],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inc_ptr() {
+        let mut tape = Tape::new();
+        tape.inc_ptr(1).unwrap();
+        assert_eq!(tape.mem_ptr, 1);
+
+        tape.inc_ptr(10).unwrap();
+        assert_eq!(tape.mem_ptr, 11);
+        
+        tape.inc_ptr(100).unwrap();
+        assert_eq!(tape.mem_ptr, 111);
+    }
+
+    #[test]
+    #[should_panic]
+    fn pointer_overflow() {
+        let mut tape = Tape::new();
+        tape.inc_ptr(TAPE_SIZE + 10).unwrap();
+    }
+
+    #[test]
+    fn dec_ptr() {
+        let mut tape = Tape::new();
+        tape.inc_ptr(10).unwrap();
+        tape.dec_ptr(1).unwrap();
+        assert_eq!(tape.mem_ptr, 9);
+
+        tape.dec_ptr(9).unwrap();
+        assert_eq!(tape.mem_ptr, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn pointer_underflow() {
+        let mut tape = Tape::new();
+        tape.dec_ptr(10).unwrap();
+    }
+
+    #[test]
+    fn inc_cell() {
+        let mut tape = Tape::new();
+        tape.inc_cell(1, 0).unwrap();
+        assert_eq!(tape.get_cell(), 1);
+
+        tape.inc_cell(10, 0).unwrap();
+        assert_eq!(tape.get_cell(), 11);
+
+        tape.inc_cell(100, 1).unwrap();
+        assert_eq!(tape.mem_buffer[tape.mem_ptr + 1], 100);
+
+        tape.inc_cell(257, 2).unwrap();
+        assert_eq!(tape.mem_buffer[tape.mem_ptr + 2], 1);
+    }
+
+    #[test]
+    fn dec_cell() {
+        let mut tape = Tape::new();
+        tape.inc_cell(10, 0).unwrap();
+        tape.dec_cell(1, 0).unwrap();
+        assert_eq!(tape.get_cell(), 9);
+
+        tape.dec_cell(10, 0).unwrap();
+        assert_eq!(tape.get_cell(), 255);
+
+        tape.dec_cell(1, 1).unwrap();
+        assert_eq!(tape.mem_buffer[tape.mem_ptr + 1], 255);
+
+        tape.dec_cell(1, 2).unwrap();
+        assert_eq!(tape.mem_buffer[tape.mem_ptr + 2], 255);
     }
 }
