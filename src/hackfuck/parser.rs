@@ -15,8 +15,8 @@ pub struct Parser {
 impl Parser {
     /// Create a new parser from a file
     pub fn from_file(file_path: &Path) -> Result<Self> {
-        let mut f = File::open(&file_path)?;
-        let metadata = fs::metadata(&file_path)?;
+        let mut f = File::open(file_path)?;
+        let metadata = fs::metadata(file_path)?;
         let mut buffer = vec![0; metadata.len() as usize];
         f.read_exact(&mut buffer)?;
         Self::from_bytes(buffer.as_slice())
@@ -249,20 +249,20 @@ impl Parser {
                     new_instructions.push(Instruction::DecCell(*batch, offset))
                 }
                 Instruction::StartLoop(_) | Instruction::EndLoop(_) => {
-                    if offset < 0 {
-                        new_instructions.push(Instruction::DecPtr(offset.unsigned_abs()))
-                    } else if offset > 0 {
-                        new_instructions.push(Instruction::IncPtr(offset.unsigned_abs()))
+                    match offset.cmp(&0) {
+                        Ordering::Greater => new_instructions.push(Instruction::IncPtr(offset.unsigned_abs())),
+                        Ordering::Less => new_instructions.push(Instruction::DecPtr(offset.unsigned_abs())),
+                        Ordering::Equal => {}
                     }
                     new_instructions.push(*instruction);
                     offset = 0;
                 }
                 Instruction::BreakPoint => {
                     if debug {
-                        if offset < 0 {
-                            new_instructions.push(Instruction::DecPtr(offset.unsigned_abs()))
-                        } else if offset > 0 {
-                            new_instructions.push(Instruction::IncPtr(offset.unsigned_abs()))
+                        match offset.cmp(&0) {
+                            Ordering::Greater => new_instructions.push(Instruction::IncPtr(offset.unsigned_abs())),
+                            Ordering::Less => new_instructions.push(Instruction::DecPtr(offset.unsigned_abs())),
+                            Ordering::Equal => {}
                         }
                         new_instructions.push(*instruction);
                         offset = 0;
@@ -273,7 +273,6 @@ impl Parser {
 
         self.instructions = new_instructions;
     }
-
 
     /// Predecessor to order optimization
     #[allow(dead_code)]

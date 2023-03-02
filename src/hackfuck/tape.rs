@@ -7,33 +7,33 @@ use sdl2::rect::Point;
 
 /// Data structure to represent brainfuck memory tape
 pub struct Tape {
-    pub io_write: bool,             // Flag indicating if most recent instruction updated screen
-    mem_ptr: usize,                 // Memory pointer
-    mem_buffer: [u8; TAPE_SIZE],    // Memory buffer
+    pub io_write: bool, // Flag indicating if most recent instruction updated screen
+    mem_ptr: usize,     // Memory pointer
+    mem_buffer: [u8; TAPE_SIZE], // Memory buffer
 }
 
 impl Tape {
     /// Increments Tape
-    /// 
+    ///
     /// # Arguments
     /// * `batch` - Number of cells move
-    /// 
+    ///
     /// # Returns
     /// Returns Err if memory pointer overflows
     pub fn inc_ptr(&mut self, batch: usize) -> Result<()> {
         if self.mem_ptr + batch > TAPE_SIZE {
             bail!("Memory pointer overflow")
         }
-        
+
         self.mem_ptr += batch;
         Ok(())
     }
 
     /// Decrements Tape
-    /// 
+    ///
     /// # Arguments
     /// * `batch` - Number of cells move
-    /// 
+    ///
     /// # Returns
     /// Returns Err if memory pointer underflows
     pub fn dec_ptr(&mut self, batch: usize) -> Result<()> {
@@ -46,11 +46,11 @@ impl Tape {
     }
 
     /// Increments cell value
-    /// 
+    ///
     /// # Arguments
     /// * `batch_size` - Value to increment cell by
     /// * `mem_ptr_offset` - Offset from current memory cell
-    /// 
+    ///
     /// # Returns
     /// Returns Err if memory pointer overflows
     pub fn inc_cell(&mut self, batch_size: usize, mem_ptr_offset: isize) -> Result<()> {
@@ -69,11 +69,11 @@ impl Tape {
     }
 
     /// Decrements cell value
-    /// 
+    ///
     /// # Arguments
     /// * `batch_size` - Value to decrement cell by
     /// * `mem_ptr_offset` - Offset from current memory cell
-    /// 
+    ///
     /// # Returns
     /// Returns Err if memory pointer overflows
     pub fn dec_cell(&mut self, batch_size: usize, mem_ptr_offset: isize) -> Result<()> {
@@ -186,7 +186,6 @@ impl Tape {
         pause()
     }
 }
-
 
 impl Tape {
     /// Creates a new tape
@@ -371,7 +370,7 @@ mod tests {
 
         tape.inc_ptr(10).unwrap();
         assert_eq!(tape.mem_ptr, 11);
-        
+
         tape.inc_ptr(100).unwrap();
         assert_eq!(tape.mem_ptr, 111);
     }
