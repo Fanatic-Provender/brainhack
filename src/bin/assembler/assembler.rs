@@ -82,9 +82,7 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                 |c| {
                                     c.dec_word(word::Q, [pos::VU, pos::VL])?
                                         .is_zero(word::Q, pos::FU, [pos::VU, pos::VL])?
-                                        .if_move(pos::FU, |c| {
-                                            c.set_word(word::A, value)?.seek(5)?.write("#")
-                                        })
+                                        .if_move(pos::FU, |c| c.set_word(word::A, value)?.seek(5))
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
                             )?
@@ -338,10 +336,79 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                             ],
                                                         )?;
                                                 }
-                                                _ => todo!(
-                                                    "unsupported comp specification '{}'",
-                                                    comp
-                                                ),
+                                                "D&A" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?.binary_and(
+                                                        word::D,
+                                                        word::A,
+                                                        word::R,
+                                                        [
+                                                            pos::T4,
+                                                            pos::T5,
+                                                            pos::T6,
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                            pos::T8,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "D&M" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?.binary_and(
+                                                        word::D,
+                                                        word::M,
+                                                        word::R,
+                                                        [
+                                                            pos::T4,
+                                                            pos::T5,
+                                                            pos::T6,
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                            pos::T8,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "D|A" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?.binary_or(
+                                                        word::D,
+                                                        word::A,
+                                                        word::R,
+                                                        [
+                                                            pos::T4,
+                                                            pos::T5,
+                                                            pos::T6,
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                            pos::T8,
+                                                        ],
+                                                    )?;
+                                                }
+                                                "D|M" => {
+                                                    c.clear_cell(&[pos::RU, pos::RL])?.binary_or(
+                                                        word::D,
+                                                        word::M,
+                                                        word::R,
+                                                        [
+                                                            pos::T4,
+                                                            pos::T5,
+                                                            pos::T6,
+                                                            pos::VU,
+                                                            pos::VL,
+                                                            pos::T7,
+                                                            pos::WU,
+                                                            pos::WL,
+                                                            pos::T8,
+                                                        ],
+                                                    )?;
+                                                }
+                                                _ => unreachable!(),
                                             }
 
                                             let dest_words: Vec<_> = chain!(
@@ -482,7 +549,7 @@ pub fn assemble<W: Write>(file: HackPair, out: W) -> anyhow::Result<W> {
                                                 _ => unreachable!(),
                                             }
 
-                                            c.clear_cell(&[pos::RU, pos::RL])?.seek(5)?.write("#")
+                                            c.clear_cell(&[pos::RU, pos::RL])
                                         })
                                 },
                                 |c| c.dec_word(word::Q, [pos::VU, pos::VL]),
