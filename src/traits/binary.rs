@@ -66,6 +66,24 @@ pub trait Binary: Arith {
         }
         self.clear_cell(&[mul])
     }
+    fn binary_and_cell(
+        &mut self,
+        a: Pos,
+        b: Pos,
+        dest: Pos,
+        temp: [Pos; 9],
+    ) -> anyhow::Result<&mut Self> {
+        self.copy_cell(a, &[temp[0]], temp[2])?
+            .copy_cell(b, &[temp[1]], temp[3])?
+            .binary_and_cell_move(
+                temp[0],
+                temp[1],
+                dest,
+                [
+                    temp[2], temp[3], temp[4], temp[5], temp[6], temp[7], temp[8],
+                ],
+            )
+    }
     fn binary_and_move(
         &mut self,
         a: Word,
@@ -187,6 +205,45 @@ mod tests {
             &[215, 148],
             0,
             &[0, 0, 215 & 148, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn binary_and_cell() -> anyhow::Result<()> {
+        let mut coder = Coder::new(vec![]);
+        coder
+            .binary_and_cell(0, 1, 2, [3, 4, 5, 6, 7, 8, 9, 10, 11])?
+            .seek(0)?;
+
+        test::compare_tape(
+            coder.writer(),
+            &[0, 0],
+            0,
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[0, 42],
+            0,
+            &[0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[31, 41],
+            0,
+            &[31, 41, 31 & 41, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            0,
+        );
+        test::compare_tape(
+            coder.writer(),
+            &[215, 148],
+            0,
+            &[215, 148, 215 & 148, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             0,
         );
 
