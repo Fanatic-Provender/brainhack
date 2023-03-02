@@ -12,6 +12,7 @@ use std::marker::PhantomData;
 pub struct IO;
 pub struct PURE;
 
+/// Program that can run brainfuck code and manage the memory tape
 pub struct Interpreter<Type> {
     pub tape: Tape,
     instructions: Vec<Instruction>,
@@ -21,11 +22,13 @@ pub struct Interpreter<Type> {
 }
 
 impl<Type> Interpreter<Type> {
+    /// Replace program with new instructions
     #[allow(dead_code)]
     pub fn load(&mut self, instructions: Vec<Instruction>) {
         self.instructions = instructions;
     }
 
+    /// Run the program without any IO
     #[allow(dead_code)]
     pub fn eval(&mut self) -> Result<()> {
         let mut i = 0;
@@ -49,15 +52,13 @@ impl<Type> Interpreter<Type> {
             }
             i += 1;
         }
-
-        println!("{:?}", self.tape.get_pixels());
-        self.tape.breakpoint();
-
         Ok(())
     }
 }
 
+/// Operations only available with IO disabled
 impl Interpreter<PURE> {
+    /// Create a new interpreter with no IO
     pub fn new(instructions: Vec<Instruction>) -> Interpreter<PURE> {
         Interpreter::<PURE> {
             tape: Tape::new(),
@@ -68,6 +69,7 @@ impl Interpreter<PURE> {
         }
     }
 
+    /// Initialize IO operations
     pub fn init_screen(self) -> Interpreter<IO> {
         let sdl_context = sdl2::init().unwrap();
 
@@ -91,6 +93,7 @@ impl Interpreter<PURE> {
     }
 }
 
+/// Operations only available with IO enabled
 impl Interpreter<IO> {
     pub fn run(&mut self) -> Result<()> {
         let mut i = 0;
@@ -107,7 +110,10 @@ impl Interpreter<IO> {
                 self.tape.io_write = false;
             }
 
-            if writes % 100000 == 0 {
+            // Arbitrary number to limit the number of times the screen is redrawn
+            // Adjust as per your needs
+            // Big programs will need a higher number
+            if writes % 100000 == 0 { 
                 canvas.set_draw_color(Color::RGB(255, 255, 255));
                 canvas.clear();
                 canvas.set_draw_color(Color::RGB(0, 0, 0));
@@ -127,6 +133,7 @@ impl Interpreter<IO> {
                 writes = 1;
             }
 
+            // Execute the next instruction
             match self.instructions[i] {
                 Instruction::IncPtr(batch) => self.tape.inc_ptr(batch)?,
                 Instruction::DecPtr(batch) => self.tape.dec_ptr(batch)?,
